@@ -1082,39 +1082,19 @@ class Substitutor:
             cifwriter = CifWriter(template_structure)
 
             # Use faster CifBlock implementation
-            
-            # there is a backward incompatibility in pymatgen v2023.10.11 -> v2023.12.18 
-            # see commit 63d7605 of pymatgen. cifile -> cif_file
-            # this try-except will be removed in the near future.
-            try:
-                cfkey = cifwriter.cif_file.data.keys()
-                cfkey = list(cfkey)[0]
-                block = AltCifBlock.from_string(str(cifwriter.cif_file.data[cfkey]))
-                cifwriter.cif_file.data[cfkey] = block
-            except AttributeError:
-                cfkey = cifwriter.ciffile.data.keys()
-                cfkey = list(cfkey)[0]
-                block = AltCifBlock.from_string(str(cifwriter.ciffile.data[cfkey]))
-                cifwriter.ciffile.data[cfkey] = block
+            cfkey = cifwriter.ciffile.data.keys()
+            cfkey = list(cfkey)[0]
+            block = AltCifBlock.from_string(str(cifwriter.ciffile.data[cfkey]))
+            cifwriter.ciffile.data[cfkey] = block
                 
             self._template_cifwriter = cifwriter
             self._template_structure = template_structure
         else:
-            # there is a backward incompatibility in pymatgen v2023.10.11 -> v2023.12.18 
-            # see commit 63d7605 of pymatgen. cifile -> cif_file
-            # this try-except will be removed in the near future.
-            try:
-                cifwriter = self._template_cifwriter
-                template_structure = self._template_structure
-                cfkey = cifwriter.cif_file.data.keys()
-                cfkey = list(cfkey)[0]
-                block = cifwriter.cif_file.data[cfkey]
-            except AttributeError:
-                cifwriter = self._template_cifwriter
-                template_structure = self._template_structure
-                cfkey = cifwriter.ciffile.data.keys()
-                cfkey = list(cfkey)[0]
-                block = cifwriter.ciffile.data[cfkey]
+            cifwriter = self._template_cifwriter
+            template_structure = self._template_structure
+            cfkey = cifwriter.ciffile.data.keys()
+            cfkey = list(cfkey)[0]
+            block = cifwriter.ciffile.data[cfkey]
 
         if symprec is None:
             type_symbol = block["_atom_site_type_symbol"].copy()
