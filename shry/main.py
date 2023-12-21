@@ -561,9 +561,17 @@ class ScriptHelper:
             if ewald is not None:
                 line = line + f" {ewald}"
             if self.write_symm:
-                space_group = list(cifwriter.ciffile.data.values())[0][
-                    "_symmetry_space_group_name_H-M"
-                ]
+                # there is a backward incompatibility in pymatgen v2023.10.11 -> v2023.12.18 
+                # see commit 63d7605 of pymatgen. cifile -> cif_file
+                # this try-except will be removed in the near future.
+                try:
+                    space_group = list(cifwriter.cif_file.data.values())[0][
+                        "_symmetry_space_group_name_H-M"
+                    ]
+                except AttributeError:
+                    space_group = list(cifwriter.ciffile.data.values())[0][
+                        "_symmetry_space_group_name_H-M"
+                    ]
                 line += line + f" {space_group}"
             print(line, file=logio)
 
