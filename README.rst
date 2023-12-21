@@ -146,16 +146,18 @@ Documentation
 
 The documentation is available `here <https://shry.readthedocs.io/en/latest/>`_.
 
-How to release
---------------
 
-Work on the devel or on a new branch
+Contributing to the project
+---------------------------
+Please work on your **forked** repository, and send a pull request to the devel branch of the original GitHub repository. 
+After the pull request is approved and the devel branch is merged.
 
-.. code-block:: console
-    
-    git merge <new branch> devel # if you work on a new branch.
-    git push origin devel # A GitHub Action triggers pytests.
+If you want to contribute to the project, report a bug, or ask for
+a new feature, please `raise an issue <https://github.com/shry-project/SHRY/issues>`_.
 
+
+How to release for maintainers
+----------------------------------
 Check the next-version version
 
 .. code-block:: console
@@ -172,12 +174,7 @@ Add and push with the new tag
     git tag <next-version>  # e.g., git tag v1.1.4  # Do not forget "v" before the version number!
     git push origin devel --tags  # or to the new branch
 
-Send a pull request to the master branch on GitHub. After the pull request is approved and the devel branch is merged to the master, a GitHub Action checks if the automatic deploy works using test-pyPI (only if the commit is tagged correctly, e.g., v1.1.0).
+Merge the devel branch to the master branch. The implemented GitHub Action checks if the automatic deploy works using test-pyPI (only if the commit is tagged correctly, e.g., v1.1.0 or v1.1.0-alpha).
 
-Finally, do a new release with a release note on GitHub. The new release triggers an implemented GitHub Action that automatically uploads the package to PyPI (if the commit is tagged correctly, e.g., v1.1.0).
+Finally, do a new release with a release note on GitHub. The new release triggers an implemented GitHub Action that automatically uploads the package to PyPI (if the commit is tagged correctly, e.g., v1.1.0 or v1.1.0-alpha).
 
-Contributing to the project
----------------------------
-
-If you want to contribute to the project, report a bug, or ask for
-a new feature, please `raise an issue <https://github.com/shry-project/SHRY/issues>`_.
