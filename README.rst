@@ -174,7 +174,7 @@ Add and push with the new tag
     git tag <next-version>  # e.g., git tag v1.1.4  # Do not forget "v" before the version number!
     git push origin devel --tags  # or to the new branch # Do not push to the mater branch!!
 
-Make a pull request for merging the devel branch to the master branch by hand. The implemented GitHub Action checks if the automatic deploy works using test-pyPI (only if the commit is tagged correctly, e.g., v1.1.0 or v1.1.0-alpha).
+Make a pull request for merging the devel branch to the master branch by hand. The implemented GitHub Action checks if the automatic deploy works using test-pyPI.
 
 Finally, do a new release with a release note on GitHub. The new release triggers an implemented GitHub Action that automatically uploads the package to PyPI (if the commit is tagged correctly, e.g., v1.1.0 or v1.1.0-alpha).
 
