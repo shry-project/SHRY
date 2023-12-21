@@ -62,7 +62,7 @@ instead follow the procedures below.
 
 .. code-block:: console
 
-    git clone https://github.com/shry-project/shry.git
+    git clone https://github.com/shry-project/SHRY.git
     cd shry
     pip install -e .
 
