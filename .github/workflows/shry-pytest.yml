@@ -5,7 +5,7 @@ name: SHRY pytest
 
 on:
   push:
-    branches: [ "master", "devel" ]
+    branches: [ "main", "devel" ]
   pull_request:
     branches: [ "main", "devel" ]
 
