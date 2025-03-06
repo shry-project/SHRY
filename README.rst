@@ -109,13 +109,15 @@ supercell can be specified by either
 
 .. code-block:: console
 
-    shry -s 2 2 1 --count-only STRUCTURE_CIF
+    shry -s 2 2 1 --count-only STRUCTURE_CIF # depending on your environment.
+    shry -s='2 2 1' --count-only STRUCTURE_CIF # depending on your environment.
 
 or
 
 .. code-block:: console
 
-    shry -s 2 0 0 0 2 0 0 0 1 --count-only STRUCTURE_CIF
+    shry -s 2 0 0 0 2 0 0 0 1 --count-only STRUCTURE_CIF # depending on your environment.
+    shry -s='2 0 0 0 2 0 0 0 1' --count-only STRUCTURE_CIF # depending on your environment.
 
 Generating unique structures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -125,7 +127,8 @@ following command:
 
 .. code-block:: console
 
-    shry -s 2 2 1 STRUCTURE_CIF
+    shry -s 2 2 1 STRUCTURE_CIF # depending on your environment.
+    shry -s='2 2 1' STRUCTURE_CIF # depending on your environment.
 
 The generated symmetry-inequivalent structures are saved in sliceXX
 directories.
