@@ -1,6 +1,9 @@
 README
 ==========
 
+.. warning::
+    Dear Users. If you are using `SHRY`, would you mind giving it a **star** from the button at the top right on the GitHub repo.? Maintaining and updating this software is not the primary job of the project owner. If there are users out there, we would like to continue the maintenance and updates, so we would like to gather some statistics. We cannot see how many people are using it from the developers' side. Your corporations would be greatly appreciated.
+
 |logo|
 
 |license| |DL| |release| |PYPI_version| |Python_version| |workflows| |fork| |stars|
