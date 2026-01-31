@@ -5,3 +5,19 @@ build-backend = "setuptools.build_meta"
 # pyproject.toml
 [tool.setuptools_scm]
 write_to = "shry/_version.py"
+local_scheme = "no-local-version"
+
+[tool.ruff]
+line-length = 128
+lint.select = [
+    "F", # Flake8
+    "B", # Black
+    "I", # isort
+    "E", # pycodestyle-errors
+    "D", # pydocstyle
+]
+lint.extend-ignore = ["I001", "B008", "B023", "D417", "D100", "E501", "E741"]
+exclude = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
