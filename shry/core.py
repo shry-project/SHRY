@@ -225,7 +225,7 @@ class AltCifBlock(CifBlock):
     CifBlock but optimized for when there are
     many, slightly different blocks:
 
-    - Pre-format fields on init, value update, and from_string
+    - Pre-format fields on init, value update, and from_str
     - Cache unchanged strings
     - Loop to list instead of to string
     """
@@ -240,11 +240,11 @@ class AltCifBlock(CifBlock):
 
         # Check for maximum lengths
         for line in lines.split("\n"):
-            if len(line) < self.maxlen:
+            if len(line) < self.max_len:
                 s.append(line)
             else:
                 sublines = [
-                    line[i : i + self.maxlen] for i in range(0, len(line), self.maxlen)
+                    line[i : i + self.max_len] for i in range(0, len(line), self.max_len)
                 ]
                 s.extend(sublines)
         return s
@@ -278,7 +278,7 @@ class AltCifBlock(CifBlock):
                     s.extend(self.string_cache[k])
                 else:
                     v = self.data[k]
-                    if len(k) + len(v) + 3 < self.maxlen:
+                    if len(k) + len(v) + 3 < self.max_len:
                         s.append(f"{k}   {v}")
                     else:
                         s.extend([k, v])
@@ -296,6 +296,9 @@ class AltCifBlock(CifBlock):
 
     def __init__(self, data, loops, header):
         super().__init__(data, loops, header)
+        # Upstream renamed maxlen -> max_len; assume upstream provides it.
+        if hasattr(self, "max_len"):
+            self.max_len = self.max_len
         # Pre-format everything.
         formatted = []
         self.string_cache = OrderedDict()
@@ -315,7 +318,7 @@ class AltCifBlock(CifBlock):
                 # Cache preparation
                 v = self.data[k]
                 s = []
-                if len(k) + len(v) + 3 < self.maxlen:
+                if len(k) + len(v) + 3 < self.max_len:
                     s.append(f"{k}   {v}")
                 else:
                     s.extend([k, v])
@@ -1072,19 +1075,19 @@ class Substitutor:
             cifwriter = CifWriter(template_structure)
 
             # Use faster CifBlock implementation
-            cfkey = cifwriter.ciffile.data.keys()
+            cfkey = cifwriter.cif_file.data.keys()
             cfkey = list(cfkey)[0]
-            block = AltCifBlock.from_string(str(cifwriter.ciffile.data[cfkey]))
-            cifwriter.ciffile.data[cfkey] = block
+            block = AltCifBlock.from_str(str(cifwriter.cif_file.data[cfkey]))
+            cifwriter.cif_file.data[cfkey] = block
 
             self._template_cifwriter = cifwriter
             self._template_structure = template_structure
         else:
             cifwriter = self._template_cifwriter
             template_structure = self._template_structure
-            cfkey = cifwriter.ciffile.data.keys()
+            cfkey = cifwriter.cif_file.data.keys()
             cfkey = list(cfkey)[0]
-            block = cifwriter.ciffile.data[cfkey]
+            block = cifwriter.cif_file.data[cfkey]
 
         if symprec is None:
             type_symbol = block["_atom_site_type_symbol"].copy()
@@ -1230,7 +1233,7 @@ class Substitutor:
         """
         # TODO: less ad hoc implementation.
         cifwriter = self._get_cifwriter(p, symprec)
-        cifparser = CifParser.from_string(str(cifwriter))
+        cifparser = CifParser.from_str(str(cifwriter))
         structure = cifparser.get_structures(primitive=False)[0]
         try:
             if not np.isclose(structure.charge, 0.0):

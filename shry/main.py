@@ -561,7 +561,7 @@ class ScriptHelper:
             if ewald is not None:
                 line = line + f" {ewald}"
             if self.write_symm:
-                space_group = list(cifwriter.ciffile.data.values())[0][
+                space_group = list(cifwriter.cif_file.data.values())[0][
                     "_symmetry_space_group_name_H-M"
                 ]
                 line += line + f" {space_group}"
@@ -759,7 +759,7 @@ class LabeledStructure(Structure):
         with open(
             cif_filename, "r", encoding=encoding, errors="surrogateescape"
         ) as f:
-            parser = CifParser.from_string(f.read())
+            parser = CifParser.from_str(f.read())
 
         # Since Structure only takes the first structure inside a CIF, do the same.
         cif_dict = list(parser.as_dict().values())[0]
