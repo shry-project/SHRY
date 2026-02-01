@@ -113,23 +113,20 @@ If you want to contribute to the project, report a bug, or ask for a new feature
 
 ## Branches
 
- - `main`: main branch.
- - `devel*`: development branches.
- - `rc`: the latest stable version ready for deployment of the package.
- - `rc-gh-pages`: the latest stable version ready for deployment of the documentation.
+- `main`: main branch.
+- `devel*`: development branches.
+- `rc`: the latest stable version ready for deployment of the package.
+- `rc-gh-pages`: the latest stable version ready for deployment of the documentation.
 
 Every time a change is pushed to the `main` or `devel*` branch, the `GitHub` workflow launches the implemented unit and integration tests (`shry-pytest.yml`) for the `main` and `devel*` branches).
-
 
 ## How to deploy the package
 
 Once the `main` branch is merged into the `rc` branch, the `GitHub` workflow launches the implemented unit and integration tests (`shry-pytest.yml`) and test a deployment using `test-PyPI`. Then, once a tag is attached to (the latest) commit in the `rc` branch, the `GitHub` workflow checks the tag format (PEP 440 with the starting v, e.g., v0.1.0b4, v0.1.1, v1.0) and deploy the package to `PyPI`.
 
-
 ## Formatting
 
 Formatting rules are written in `pyproject.toml`.
-
 
 ## Pre-commit
 
@@ -141,7 +138,6 @@ Pre-commit (https://pre-commit.com/) is mainly used for applying the formatting 
 - pre-commit hook is run by `pre-commit run --all-files`.
 
 Unless running pre-commit, pre-commit.ci may push the fix at PR by github action. In this case, the fix should be merged by the contributor's repository.
-
 
 ## VSCode setting
 - Not strictly, but VSCode's `settings.json` may be written like below
