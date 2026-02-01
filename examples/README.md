@@ -1,95 +1,49 @@
-# Using SHRY in Python
+# Examples
 
-This directory contains examples on
-how to use SHRY as a Python module.
+What each script does, summarized per example. All required CIF inputs are bundled in this directory.
 
-## Basic function
+## Example 1: Basic enumeration and CIF output
+- File: [examples/example1.py](examples/example1.py)
+- What it does: Load `SmFe7Ti.cif`, use `Substitutor` to generate all symmetry-inequivalent structures, and write CIFs with their multiplicity (weight).
+- Key point: Uses `Substitutor.quantities(("cifwriter", "weight"))` and saves to `output/` as `cif_i{index}w{weight}.cif`.
 
-(See `example1.py` for this section).
+## Example 2: Comparison with enumlib
+- File: [examples/example2.py](examples/example2.py)
+- What it does: Expand `PbSnTe.cif` to a 2×2×2 supercell and compare enumeration results between Pymatgen's `EnumlibAdaptor` and SHRY.
+- Comparison modes:
+  - SHRY default (group equivalent sites).
+  - SHRY with `groupby=lambda x: x.species` (group by species, similar to enumlib behavior).
+- Output: Prints the number of structures from each approach to stdout.
 
-`Substitutor` is the main interface for using
-functions implemented in SHRY.
-It uses Pymatgen's `Structure` as the
-structure representation.
+## Example 3: LabeledStructure and label-based substitutions
+- File: [examples/example3.py](examples/example3.py)
+- What it does: Load `SmFe12.cif` as a `LabeledStructure`, replace labels `Fe1`→`Fe3Ti`, `Fe2`→`Fe7Ti`, `Fe3`→`Ti`, then expand to a non-diagonal supercell `((2,0,1),(0,1,0),(1,0,1))`. Generates all structures, writes CIFs and weights to `output/`, and prints configuration letters (e.g., `aba...`).
+- Key point: Keeps `_atom_site_label`, so substitutions remain label-consistent even after supercell expansion.
 
-```python
-from pymatgen.core import Structure
-from shry import Substitutor
+## Example 4a: Caching pattern generation and saving it
+- File: [examples/example4a.py](examples/example4a.py)
+- What it does: Load `SmFe12.cif` as a `LabeledStructure`, replace `Fe1`→`Fe7Ti`, run `Substitutor(cache=True)`, write CIFs, and pickle the internal `pattern_makers` to `pg.pkl`.
+- Benefit: Reuse the cached pattern makers to skip expensive recomputation for symmetry-equivalent systems later.
 
-...
+## Example 4b: Reusing cache and applying to different compositions
+- File: [examples/example4b.py](examples/example4b.py)
+- What it does: Load `pg.pkl` from Example 4a. Starting from `SmFe12.cif`, evaluate two substitution cases (`Fe`→`Fe3Ti` and `Fe`→`FeTi3`) in sequence. Attach the loaded `pattern_makers` to a `Substitutor`, generate CIFs for `run1` and `run2`, then overwrite `pg.pkl` with the updated cache.
+- Key point: When symmetry is the same, you can rapidly iterate different substitution patterns using the cached pattern makers.
 
-structure = Structure.from_file(file_name)
-substitutor = Substitutor(structure)
-```
+## Example 5: Generating ASE Atoms
+- File: [examples/example5.py](examples/example5.py)
+- What it does: Expand `PbSnTe.cif` to 2×2×2, enumerate all structures with `Substitutor`, and obtain them as ASE `Atoms` objects.
+- Output: Prints the number of structures to stdout and shows one sample `Atoms` instance; useful as a bridge to downstream ASE workflows.
 
-We recommend enumerating the unique structures
-using `Substitutor.count()` before generating them.
-It is an implementation of Polya enumeration,
-which is almost instant for most cases.
+## Example 6: Ranking by Ewald energy
+- File: [examples/example6.py](examples/example6.py)
+- What it does: Enumerates substitutions, guesses oxidation states, computes Ewald energies, and writes the 100 lowest-energy structures to output_ewald/.
+- Note: If oxidation states cannot be guessed, Ewald energies may be zero or skipped.
 
-The structures (either as CIF or `Structure`), weights,
-configuration letters, etc. can then be obtained from
-`Substitutor.quantities(string_tuple)`.
-The `string_tuple` may contain any of these keywords:
+## Example 7: Highest symmetry structures (lowest weight)
+- File: [examples/example7.py](examples/example7.py)
+- What it does: Enumerates substitutions and writes the top-N structures with the smallest weight (highest symmetry) to output_symm_top/. Optionally writes all structures sorted by weight.
 
-- `cifwriter`. Pymatgen's `CifWriter` instances.
-- `structure`. Pymatgen's `Structure` instances.
-  Use this for writing CIF files.
-- `weight`. How many configurations
-- `letter`. Configuration letter ('aaa', 'bab', etc.)
-  corresponding to the substitution.
-- `ewald`. Ewald energy for the given structure.
-
-`Substitutor.quantities(string_tuple)` is a generator
-of a dictionary with the previous keywords as keys.
-For example, if you want to get the CIFs and weights, do
-
-```python
-for i, packet in enumerate(substitutor.quantities(("cifwriter", "weight"))):
-    cifwriter = packet["cifwriter"]
-    weight = packet["weight"]
-
-    filename=f"cif_i{i}w{weight}.cif"
-    cifwriter.write_file(filename=os.path.join(output_dir, filename))
-```
-
-There are also individual generators for each of the quantities:
-
-- `cifwriters()`
-- `structure_writers()`
-- `weights()`
-- `letters()`
-- `ewalds()`
-
-however these will invoke one full run for every call,
-so if more than one quantities is required,
-it will be slower.
-
-## Enumlib equivalent
-
-See `example2.py` for comparison with equivalent
-`enumlib` functions through Pymatgen's `EnumlibAdaptor`.
-
-## Advanced use
-
-### LabeledStructure
-
-`LabeledStructure` is a modified Pymatgen's `Structure`,
-but it tracks the CIF's `_atom_site_label`.
-This is useful if you want to group sites
-together regardless of supercell use,
-which can sometimes split the sites.
-
-It also implements `replace_species` for substituting sites
-with a slightly more convenient syntax (see `example3.py`).
-
-### Saving substitutor instance
-
-`Substitutor` can automatically "remap" pattern
-generated in other structure if the structures are
-symmetrically similar.
-This can save a lot of time if you are dealing with
-multiple concentrations or a set of symmetrically similar sytems.
-
-See `example4a.py` for how to enable caching and pickle
-the `Substitutor` instance, and `example4b.py` for the later reloading.
+## Example 8: Merge multiple Wyckoff labels for shared concentration
+- File: [examples/example8.py](examples/example8.py)
+- What it does: Loads `SmFe12.cif`, relabels multiple Wyckoff labels (e.g., `Fe1` and `Fe2`) into a shared label (`Target`), then applies a single disordered composition (e.g., `Fe0.5Ti0.5`) across that pooled site set. This enables specifying a global substitution concentration across multiple Wyckoff positions.
