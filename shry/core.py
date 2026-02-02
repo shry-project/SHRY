@@ -1,9 +1,7 @@
 # Copyright (c) SHRY Development Team.
 # Distributed under the terms of the MIT License.
 
-"""
-Core operations, pattern generation, etc.
-"""
+"""Core operations, pattern generation, etc."""
 
 # python modules
 import collections
@@ -53,9 +51,7 @@ def get_integer_formula_and_factor(
     max_denominator: int = int(1 / const.DEFAULT_ATOL),
     iupac_ordering: bool = False,
 ) -> Tuple[str, float]:
-    """
-    The default Composition groups together different ox states which is not ideal...
-    """
+    """The default Composition groups together different ox states which is not ideal..."""
     el_amt = self.as_dict()
     g = gcd_float(list(el_amt.values()), 1 / max_denominator)
 
@@ -73,9 +69,7 @@ def to_int_dict(self):
     Returns:
         Dict with element symbol and integer amount
     """
-    _, factor = self.get_integer_formula_and_factor(
-        max_denominator=int(1 / const.DEFAULT_ATOL)
-    )
+    _, factor = self.get_integer_formula_and_factor(max_denominator=int(1 / const.DEFAULT_ATOL))
     int_dict = {e: int(a) for e, a in (self / factor).as_dict().items()}
 
     # be safe: Composition groups together different ox states which is not ideal...
@@ -94,17 +88,12 @@ def inted_composition(self):
     """
     Return Composition instance with integer formula
     """
-    _, factor = self.get_integer_formula_and_factor(
-        max_denominator=int(1 / const.DEFAULT_ATOL)
-    )
+    _, factor = self.get_integer_formula_and_factor(max_denominator=int(1 / const.DEFAULT_ATOL))
     int_comp = self / factor
 
     # be safe
     int_dict = {e: int(a) for e, a in int_comp.as_dict().items()}
-    if not all(
-        np.isclose(x * factor, y, atol=const.DEFAULT_ATOL)
-        for x, y in zip(int_dict.values(), self.as_dict().values())
-    ):
+    if not all(np.isclose(x * factor, y, atol=const.DEFAULT_ATOL) for x, y in zip(int_dict.values(), self.as_dict().values())):
         raise ValueError(
             "Composition (Occupancy) is not rational! Please try to increase significant digits "
             "e.g., 1/3 = 0.3333 -> 1/3 = 0.3333333333333."
@@ -113,9 +102,7 @@ def inted_composition(self):
     return int_comp
 
 
-def formula_double_format_tol(
-    afloat, ignore_ones=True, tol: float = const.DEFAULT_ATOL * 10
-):
+def formula_double_format_tol(afloat, ignore_ones=True, tol: float = const.DEFAULT_ATOL * 10):
     """
     This function is used to make pretty formulas by formatting the amounts.
     Instead of Li1.0 Fe1.0 P1.0 O4.0, you get LiFePO4.
@@ -168,12 +155,8 @@ class PatchedSymmetrizedStructure(SymmetrizedStructure):
         def to_s(x):
             return f"{x:0.6f}"
 
-        outs.append(
-            "abc   : " + " ".join([to_s(i).rjust(10) for i in self.lattice.abc])
-        )
-        outs.append(
-            "angles: " + " ".join([to_s(i).rjust(10) for i in self.lattice.angles])
-        )
+        outs.append("abc   : " + " ".join([to_s(i).rjust(10) for i in self.lattice.abc]))
+        outs.append("angles: " + " ".join([to_s(i).rjust(10) for i in self.lattice.angles]))
         if self._charge:
             if self._charge >= 0:
                 outs.append(f"Overall Charge: +{self.charge}")
@@ -215,9 +198,7 @@ class PatchedSpacegroupAnalyzer(SpacegroupAnalyzer):
             self.get_space_group_number(),
             self.get_symmetry_operations(),
         )
-        return PatchedSymmetrizedStructure(
-            self._structure, sg, ds["equivalent_atoms"], ds["wyckoffs"]
-        )
+        return PatchedSymmetrizedStructure(self._structure, sg, ds["equivalent_atoms"], ds["wyckoffs"])
 
 
 class AltCifBlock(CifBlock):
@@ -234,18 +215,14 @@ class AltCifBlock(CifBlock):
         s = ["loop_"] + [f" {l}" for l in loop]
 
         # Join the fields
-        lines = "\n".join(
-            "  ".join(x) for x in zip(*[self.data[k] for k in loop])
-        ).replace(";", "\n")
+        lines = "\n".join("  ".join(x) for x in zip(*[self.data[k] for k in loop])).replace(";", "\n")
 
         # Check for maximum lengths
         for line in lines.split("\n"):
             if len(line) < self.max_len:
                 s.append(line)
             else:
-                sublines = [
-                    line[i : i + self.max_len] for i in range(0, len(line), self.max_len)
-                ]
+                sublines = [line[i : i + self.max_len] for i in range(0, len(line), self.max_len)]
                 s.extend(sublines)
         return s
 
@@ -565,15 +542,9 @@ class Substitutor:
                 # Ad hoc fix: if occupancy is less than 1, stop.
                 # TODO: Automatic vacancy handling
                 if not np.isclose(site.species.num_atoms, 1.0, atol=self._atol):
-                    logging.warning(
-                        f"The occupancy of the site {site.species} is {site.species.num_atoms}."
-                    )
-                    logging.warning(
-                        f"This should be 1 within the torelance, atol={self._atol}."
-                    )
-                    logging.warning(
-                        "If you want to consider vacancy sites, please add pseudo atoms."
-                    )
+                    logging.warning(f"The occupancy of the site {site.species} is {site.species.num_atoms}.")
+                    logging.warning(f"This should be 1 within the torelance, atol={self._atol}.")
+                    logging.warning("If you want to consider vacancy sites, please add pseudo atoms.")
                     raise RuntimeError("The sum of number of occupancies is not 1.")
         if not disorder_sites:
             logging.warning("No disorder sites found within the Structure.")
@@ -596,7 +567,7 @@ class Substitutor:
                     (
                         f"Can't fit {integer_formula} "
                         f"within {len(sites)} sites "
-                        f"(enlarge by {formula_unit_sum/len(sites):.4f}x). "
+                        f"(enlarge by {formula_unit_sum / len(sites):.4f}x). "
                         f"If the integer composition ({integer_formula}) is not what you expected, "
                         "please try to increase the precision of the occupancy "
                         "e.g., 1/3 = 0.3333 -> 1/3 = 0.3333333333333."
@@ -626,10 +597,7 @@ class Substitutor:
                 is_up = True
 
                 for _ in range(const.FIND_COORDS_LIST_ATTEMPTS):
-                    matches = [
-                        find_in_coord_list_pbc(coords, coord, atol=atol)
-                        for coord in o_coords
-                    ]
+                    matches = [find_in_coord_list_pbc(coords, coord, atol=atol) for coord in o_coords]
                     # Sometimes the operated coordinates fell
                     # outside of the symmetry tolerance.
                     # On the other hand, if the tolerance is too low,
@@ -760,20 +728,14 @@ class Substitutor:
             # Note: __init__ checks makes sure this has no remainder.
             fus = len(sites) // fu
 
-            orbit_compositions[orbit] = {
-                e: fus * int(a) for e, a in composition.items()
-            }
+            orbit_compositions[orbit] = {e: fus * int(a) for e, a in composition.items()}
         return orbit_compositions
 
     def _disorder_elements(self):
-        return {
-            orbit: tuple(x.keys()) for orbit, x in self._sorted_compositions().items()
-        }
+        return {orbit: tuple(x.keys()) for orbit, x in self._sorted_compositions().items()}
 
     def _disorder_amounts(self):
-        return {
-            orbit: tuple(x.values()) for orbit, x in self._sorted_compositions().items()
-        }
+        return {orbit: tuple(x.values()) for orbit, x in self._sorted_compositions().items()}
 
     def make_patterns(self):
         """
@@ -861,9 +823,7 @@ class Substitutor:
                 chain = list(rscum(self._disorder_amounts()[orbit][::-1]))[::-1]
                 indices = np.arange(len(sites))
 
-                for aut, pattern in maker_recurse_c(
-                    aut, pattern + [indices], orbit, chain
-                ):
+                for aut, pattern in maker_recurse_c(aut, pattern + [indices], orbit, chain):
                     # TODO: something cheaper?
                     _ochain = ochain.copy()
                     yield from maker_recurse_o(aut, pattern, _ochain)
@@ -1119,9 +1079,7 @@ class Substitutor:
             cell_specie = list(set(x.species for x in template_structure))
             # Flattened list of species @ disorder sites
             specie = [y for x in des.values() for y in x]
-            z_map = [
-                cell_specie.index(Composition({specie[j]: 1})) for j in range(len(p))
-            ]
+            z_map = [cell_specie.index(Composition({specie[j]: 1})) for j in range(len(p))]
             zs = [cell_specie.index(x.species) for x in template_structure]
 
             pi = iter(p)
@@ -1149,9 +1107,7 @@ class Substitutor:
                     space_group_data["translations"],
                 )
             ]
-            u, inv = np.unique(
-                space_group_data["equivalent_atoms"], return_inverse=True
-            )
+            u, inv = np.unique(space_group_data["equivalent_atoms"], return_inverse=True)
             equivalent_indices = [[] for _ in range(len(u))]
             for j, inv in enumerate(inv):
                 equivalent_indices[inv].append(j)
@@ -1159,9 +1115,7 @@ class Substitutor:
                 (
                     sorted(
                         j,
-                        key=lambda s: tuple(
-                            abs(x) for x in template_structure.sites[s].frac_coords
-                        ),
+                        key=lambda s: tuple(abs(x) for x in template_structure.sites[s].frac_coords),
                     )[0],
                     len(j),
                 )
@@ -1180,9 +1134,7 @@ class Substitutor:
 
             block["_symmetry_space_group_name_H-M"] = space_group_data["international"]
             block["_symmetry_Int_Tables_number"] = space_group_data["number"]
-            block["_symmetry_equiv_pos_site_id"] = [
-                str(i) for i in range(1, len(ops) + 1)
-            ]
+            block["_symmetry_equiv_pos_site_id"] = [str(i) for i in range(1, len(ops) + 1)]
             block["_symmetry_equiv_pos_as_xyz"] = ops
 
             block["_atom_site_type_symbol"] = []
@@ -1237,14 +1189,10 @@ class Substitutor:
         structure = cifparser.get_structures(primitive=False)[0]
         try:
             if not np.isclose(structure.charge, 0.0):
-                logging.warn(
-                    f"Unit cell is charged: (total charge = {structure.charge})."
-                )
+                logging.warn(f"Unit cell is charged: (total charge = {structure.charge}).")
             return EwaldSummation(structure).total_energy
         except TypeError as exc:
-            raise ValueError(
-                "Ewald summation required CIFs with defined oxidation states."
-            ) from exc
+            raise ValueError("Ewald summation required CIFs with defined oxidation states.") from exc
 
 
 class PatternMaker:
@@ -1418,9 +1366,7 @@ class PatternMaker:
         try:
             perm_list = relabel_element(perm_list)
         except TypeError as exc:
-            raise ValueError(
-                f"\n{perm_list}\n" "Rows must have same elements."
-            ) from exc
+            raise ValueError(f"\n{perm_list}\nRows must have same elements.") from exc
 
         # Row sort
         row_index = np.lexsort(perm_list.T)
@@ -1496,9 +1442,7 @@ class PatternMaker:
             if _n in self._patterns:
                 inverter = np.arange(self._nix)
                 self._auts[n] = self._auts[_n]
-                self._patterns[n] = [
-                    np.setdiff1d(inverter, p) for p in self._patterns[_n]
-                ]
+                self._patterns[n] = [np.setdiff1d(inverter, p) for p in self._patterns[_n]]
             else:
                 starts = [i for i in self._patterns.keys() if i < _n]
                 if not starts:
@@ -1509,10 +1453,7 @@ class PatternMaker:
                 # "Mirror" patterns
                 if _n != n:
                     inverter = np.arange(self._nix)
-                    ap = [
-                        (a, np.setdiff1d(inverter, p))
-                        for a, p in self._search(start=start, stop=_n)
-                    ]
+                    ap = [(a, np.setdiff1d(inverter, p)) for a, p in self._search(start=start, stop=_n)]
                 else:
                     ap = [(a, p) for a, p in self._search(start=start, stop=_n)]
                 self._auts[n], self._patterns[n] = zip(*ap)
@@ -1967,17 +1908,11 @@ class Polya:
         # Padding
         joint_coeffs = np.array(sum(amt_tuple, ()))
         coeff_sums = [len(x) for x in amt_tuple]
-        pads = [
-            (sum(coeff_sums[:i]), sum(coeff_sums[i + 1 :]))
-            for i in range(len(amt_tuple))
-        ]
+        pads = [(sum(coeff_sums[:i]), sum(coeff_sums[i + 1 :])) for i in range(len(amt_tuple))]
 
         o_counts = []
         for o_cycles in self.ci().values():
-            o_parts = [
-                [aR_array(cnum, len(color)) for cnum in cycles.values()]
-                for cycles, color in zip(o_cycles, amt_tuple)
-            ]
+            o_parts = [[aR_array(cnum, len(color)) for cnum in cycles.values()] for cycles, color in zip(o_cycles, amt_tuple)]
 
             # Exponent values of each variables
             exps = [

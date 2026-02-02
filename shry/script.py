@@ -37,7 +37,7 @@ class TqdmLoggingHandler(logging.Handler):
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:  # pylint: disable=bare-except
+        except Exception:  # pylint: disable=bare-except
             self.handleError(record)
 
 
@@ -51,19 +51,12 @@ def print_header():
     # logger.setLevel(logging.INFO)
     handler = TqdmLoggingHandler()
     handler.setLevel(logging.INFO)
-    logging.basicConfig(
-        format="%(message)s", level=logging.INFO, handlers=[handler]
-    )
+    logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=[handler])
     logging.info("********************************\n")
-    logging.info(
-        "SHRY: Suite for High-throughput generation of models"
-        "with atomic substitutions implemented by Python"
-    )
+    logging.info("SHRY: Suite for High-throughput generation of modelswith atomic substitutions implemented by Python")
     logging.info("")
     logging.info("Please cite the following paper::\n")
-    logging.info(
-        "G.I. Prayogo, et al., J. Chem. Inf. Model. 62, 2909-2915 (2022)"
-    )
+    logging.info("G.I. Prayogo, et al., J. Chem. Inf. Model. 62, 2909-2915 (2022)")
     logging.info("https://doi.org/10.1021/acs.jcim.2c00389")
     logging.info("\n********************************")
     logging.info(f"Begin {time_string} (unixtime: {const.DEFAULT_SEED})")
@@ -81,7 +74,7 @@ def print_footer():
     logging.info(const.HLINE)
 
 
-def main():  # pylint: disable=missing-function-docstring
+def get_parser():
     parser = argparse.ArgumentParser(
         epilog=f"SHRY version {shry_version}",
         description="Quick use: `shry STRUCTURE_CIF`. See `shry -h` for more options.",
@@ -141,10 +134,7 @@ def main():  # pylint: disable=missing-function-docstring
     group.add_argument(
         "--count-only",
         action="store_true",
-        help=(
-            "Enumerate the total number of ordered configurations "
-            "from the given CIF and quit."
-        ),
+        help=("Enumerate the total number of ordered configurations from the given CIF and quit."),
     )
     group.add_argument(
         "--mod-only",
@@ -240,6 +230,11 @@ def main():  # pylint: disable=missing-function-docstring
         # ),
         help=argparse.SUPPRESS,
     )
+    return parser
+
+
+def main():  # pylint: disable=missing-function-docstring
+    parser = get_parser()
     args = parser.parse_args()
     const.DISABLE_PROGRESSBAR = args.disable_progressbar
 
@@ -257,22 +252,13 @@ def main():  # pylint: disable=missing-function-docstring
         helper = ScriptHelper.from_file(args.input)
     else:
         # Trick to allow ",", ";", and whiteline as separator
-        from_species = const.FLEXIBLE_SEPARATOR.split(
-            ",".join(args.from_species)
-        )
+        from_species = const.FLEXIBLE_SEPARATOR.split(",".join(args.from_species))
         to_species = const.FLEXIBLE_SEPARATOR.split(",".join(args.to_species))
-        scaling_matrix = [
-            int(x)
-            for x in const.FLEXIBLE_SEPARATOR.split(
-                ",".join(args.scaling_matrix)
-            )
-        ]
+        scaling_matrix = [int(x) for x in const.FLEXIBLE_SEPARATOR.split(",".join(args.scaling_matrix))]
 
         # check the dimension of the scaling matrix
         if not len(scaling_matrix) in {1, 3, 9}:
-            logging.warning(
-                "The scaling_matrix should be 1, 3, or 9 scalar values."
-            )
+            logging.warning("The scaling_matrix should be 1, 3, or 9 scalar values.")
             raise ValueError
         else:
             if len(scaling_matrix) == 9:
