@@ -1,0 +1,602 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Technical Notes &#8212; SHRY v0.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=e1a75a79"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notes/technical_notes';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API reference for command line tools" href="../api_reference_cli.html" />
+    <link rel="prev" title="Examples" href="../examples.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">SHRY v0.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/shry-project/SHRY" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Technical Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference_cli.html">API reference for command line tools</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference_mod/modules.html">API reference for modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference_mod/shry.html">shry package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">How to cite SHRY</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/notes/technical_notes.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Technical Notes</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#method-canonical-augmentation">Method: Canonical Augmentation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-algorithm">The Algorithm</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#invariant-and-optimization">Invariant and Optimization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#count-estimation-polya-s-enumeration-theorem">Count Estimation: Polya’s Enumeration Theorem</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#implementation-details">Implementation Details</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#core-libraries">Core Libraries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow">Workflow</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-test">Validation Test</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#intra-software-and-inter-software-checks">Intra-software and Inter-software Checks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#future-development">Future Development</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="technical-notes">
+<span id="id1"></span><h1>Technical Notes<a class="headerlink" href="#technical-notes" title="Link to this heading">#</a></h1>
+<p>This section provides an in-depth look at the theoretical background and implementation details of SHRY.
+For a formal mathematical description and extensive benchmarks, please refer to the original paper:</p>
+<blockquote>
+<div><p><strong>Shry: Application of Canonical Augmentation to the Atomic Substitution Problem</strong>
+Genki I. Prayogo, Andrea Tirelli, Keishu Utimula, Kenta Hongo, Ryo Maezono, and Kousuke Nakano
+<em>Journal of Chemical Information and Modeling</em> <strong>2022</strong>, 62 (12), 2909–2915
+DOI: <a class="reference external" href="https://doi.org/10.1021/acs.jcim.2c00389">10.1021/acs.jcim.2c00389</a></p>
+</div></blockquote>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<img alt="../_images/Ce8Pd24Sb.pdf" class="align-center" src="../_images/Ce8Pd24Sb.pdf" />
+<p><em>Source: J. Chem. Inf. Model. 2022, 62, 2909−2915 (CC-BY-NC-ND 4.0)</em></p>
+<p>We employ a technique known as <strong>Canonical Augmentation</strong>. Essentially, this is a method for exhaustively exploring ‘coloring’ patterns. As illustrated in the figure (see below), the problem of atomic substitution in a crystal structure is mapped to a crystal site coloring problem. We search for unique coloring configurations by incrementally increasing the number of colored sites within a tree structure. Crucially, strictly local information is used to decide whether to prune or extend a branch from a given node, avoiding the need for global checks. This strategy prevents the explosion of computational complexity and memory usage. To enable these local decisions, a ‘canonical’ (standardized) representation of substitution information is adopted.</p>
+<img alt="../_images/tree_example.pdf" class="align-center" src="../_images/tree_example.pdf" />
+<p><em>Source: J. Chem. Inf. Model. 2022, 62, 2909−2915 (CC-BY-NC-ND 4.0)</em></p>
+<p>The core problem SHRY solves is the <strong>Atomic Substitution Problem</strong>: given a crystal structure, how to generate all symmetry-inequivalent structures obtained by substituting a subset of atoms with different species.</p>
+<p>In a naive approach, one might generate all possible permutations (<span class="math notranslate nohighlight">\(\binom{N}{k}\)</span> combinations) and then group them by symmetry. However, this suffers from <strong>combinatorial explosion</strong>. For example, substituting atoms in a large supercell can easily result in trillions of candidates, making post-generation filtering impossible.</p>
+<p>SHRY addresses this by using <strong>Canonical Augmentation</strong>, an algorithm that generates <em>only</em> the symmetry-inequivalent structures directly, bypassing the generation of redundant candidates.</p>
+</section>
+<section id="method-canonical-augmentation">
+<h2>Method: Canonical Augmentation<a class="headerlink" href="#method-canonical-augmentation" title="Link to this heading">#</a></h2>
+<p>Canonical Augmentation, originally introduced by Brendan McKay (1998), is a method for generating non-isomorphic combinatorial objects.</p>
+<section id="the-algorithm">
+<h3>The Algorithm<a class="headerlink" href="#the-algorithm" title="Link to this heading">#</a></h3>
+<p>The problem is mapped to a <strong>vertex coloring problem</strong> on a graph where vertices represent atomic sites and colors represent atomic species.</p>
+<ol class="arabic simple">
+<li><p><strong>Search Tree</strong>: The generation process is visualized as traversing a search tree. The root is the unsubstituted structure. Each edge represents identifying one more atom to be substituted.</p></li>
+<li><p><strong>Canonical Reprensentation</strong>: Every structure <span class="math notranslate nohighlight">\(X\)</span> is assigned a “canonical parent” <span class="math notranslate nohighlight">\(p(X)\)</span>. The canonical parent is defined strictly based on the structure’s properties (e.g., using a lexicographically minimal representation under symmetry operations).</p></li>
+<li><p><strong>Generation Rule</strong>: A structure <span class="math notranslate nohighlight">\(X\)</span> is accepted if and only if it was generated from its canonical parent <span class="math notranslate nohighlight">\(p(X)\)</span>. If <span class="math notranslate nohighlight">\(X\)</span> is generated from a different parent <span class="math notranslate nohighlight">\(Y \neq p(X)\)</span>, it is discarded. This ensures that each unique structure is generated exactly once.</p></li>
+<li><p><strong>Isomorphic Rejection</strong>: By checking local symmetry criteria, entire branches of the search tree leading to redundant structures can be pruned early.</p></li>
+</ol>
+<p>Unlike <strong>Orderly Generation</strong> (Read, 1978), which requires every intermediate node to be canonical, Canonical Augmentation only requires the search tree to be traversed in a canonical manner. This makes it particularly flexible and efficient for this class of problems.</p>
+</section>
+<section id="invariant-and-optimization">
+<h3>Invariant and Optimization<a class="headerlink" href="#invariant-and-optimization" title="Link to this heading">#</a></h3>
+<p>A key optimization in SHRY is the use of <strong>invariants</strong>. To check if two structures are equivalent, or to find a canonical parent, SHRY computes invariants (such as the sum of distance matrices or other symmetry-invariant properties). If invariants differ, full isomorphism testing (which is expensive) can be avoided.</p>
+</section>
+</section>
+<section id="count-estimation-polya-s-enumeration-theorem">
+<h2>Count Estimation: Polya’s Enumeration Theorem<a class="headerlink" href="#count-estimation-polya-s-enumeration-theorem" title="Link to this heading">#</a></h2>
+<p>Before performing the actual enumeration, SHRY can estimate the total number of unique structures using <strong>Polya’s Enumeration Theorem</strong>. This theorem relates the number of distinct colorings of a set under a group action to the cycle index of the group.</p>
+<div class="math notranslate nohighlight">
+\[
+|Z| = \frac{1}{|G|} \sum_{g \in G} \prod_{k=1}^n c_k^{j_k(g)}
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(|Z|\)</span> is the number of unique structures, <span class="math notranslate nohighlight">\(|G|\)</span> is the order of the symmetry group, and <span class="math notranslate nohighlight">\(c_k\)</span> terms relate to the cycle structure of the permutation <span class="math notranslate nohighlight">\(g\)</span>.</p>
+<p>This estimate allows users to decide whether a full enumeration is computationally feasible before starting the run.</p>
+</section>
+<section id="implementation-details">
+<h2>Implementation Details<a class="headerlink" href="#implementation-details" title="Link to this heading">#</a></h2>
+<p>SHRY is implemented in pure <strong>Python 3</strong>.</p>
+<section id="core-libraries">
+<h3>Core Libraries<a class="headerlink" href="#core-libraries" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Pymatgen</strong>: Used for general crystal structure handling (<code class="docutils literal notranslate"><span class="pre">Structure</span></code> objects), input/output (CIF files), and defining compositions.</p></li>
+<li><p><strong>Spglib</strong>: Used for detecting the symmetry group of the initial input structure.</p></li>
+<li><p><strong>Numpy</strong>: Used for high-performance matrix operations (e.g., coordinate transformations, distance matrices).</p></li>
+</ul>
+</section>
+<section id="workflow">
+<h3>Workflow<a class="headerlink" href="#workflow" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Initialization</strong>:</p>
+<ul class="simple">
+<li><p>Read input CIF.</p></li>
+<li><p>Detect Space Group operation <span class="math notranslate nohighlight">\(G\)</span> using <code class="docutils literal notranslate"><span class="pre">spglib</span></code>.</p></li>
+<li><p>Expand to supercell if requested (diagonal or non-diagonal expansions supported).</p></li>
+</ul>
+</li>
+<li><p><strong>Pattern Generation (<code class="docutils literal notranslate"><span class="pre">shry.core.PatternMaker</span></code>)</strong>:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">PatternMaker</span></code> class implements the Canonical Augmentation algorithm.</p></li>
+<li><p>It recursively successfully builds substitution patterns, pruning branches using symmetry operations derived from <span class="math notranslate nohighlight">\(G\)</span>.</p></li>
+</ul>
+</li>
+<li><p><strong>Structure Construction</strong>:</p>
+<ul class="simple">
+<li><p>For each unique pattern found, a new <code class="docutils literal notranslate"><span class="pre">Structure</span></code> object is created.</p></li>
+</ul>
+</li>
+<li><p><strong>Post-Processing</strong>:</p>
+<ul class="simple">
+<li><p><strong>Symmetrization</strong>: (Optional) Use <code class="docutils literal notranslate"><span class="pre">spglib</span></code> to standardized the output structure.</p></li>
+<li><p><strong>Ewald Summation</strong>: (Optional) Rank structures by electrostatic energy using Ewald summation (<code class="docutils literal notranslate"><span class="pre">pymatgen.analysis.ewald</span></code>). This is useful for finding typically stable configurations (low electrostatic energy) among thousands of candidates.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="validation-test">
+<h2>Validation Test<a class="headerlink" href="#validation-test" title="Link to this heading">#</a></h2>
+<p>To verify the reliability of SHRY, rigorous validation tests were conducted as described in <em>J. Chem. Inf. Model. 2022, 62, 2909−2915</em>. The validation process involves two main strategies: <strong>Intra-software check</strong> and <strong>Inter-software check</strong>.</p>
+<section id="intra-software-and-inter-software-checks">
+<h3>Intra-software and Inter-software Checks<a class="headerlink" href="#intra-software-and-inter-software-checks" title="Link to this heading">#</a></h3>
+<img alt="../_images/intra_and_inter_software_checks.pdf" class="align-center" src="../_images/intra_and_inter_software_checks.pdf" />
+<p><em>Source: J. Chem. Inf. Model. 2022, 62, 2909−2915 (CC-BY-NC-ND 4.0)</em></p>
+<ol class="arabic">
+<li><p><strong>Intra-software check</strong>: This validates the internal consistency of the algorithm. We confirm that the set of unique structures generated does not change depending on the choice of the initial structure. For example, applying a symmetry operation to the input structure or using a supercell with a different origin should result in an identical set of unique substituted structures (modulo symmetry). This ensures that the canonicalization process is robust and independent of the arbitrary choice of the starting representation.</p></li>
+<li><p><strong>Inter-software check</strong>: This validates the correctness of the results by comparing them with other established software packages. We compared SHRY’s output with:</p>
+<ul class="simple">
+<li><p><strong>Supercell</strong> (Okhotnikov et al., 2016)</p></li>
+</ul>
+<p>The comparison involves verifying that the total count of unique structures matches exactly across different tools for various complex test cases (e.g., disordered perovskites, alloys). In all benchmarked cases, SHRY produced the exact same number of unique isomers as the reference software.</p>
+</li>
+</ol>
+<p>These tests confirm that SHRY correctly enumerates symmetry-inequivalent structures without missing any candidates or generating duplicates.</p>
+</section>
+<section id="performance">
+<h3>Performance<a class="headerlink" href="#performance" title="Link to this heading">#</a></h3>
+<p>As a Python-based tool, SHRY overhead is higher than optimized codes with a compiled language. However, the algorithm scales linearly:</p>
+<ul class="simple">
+<li><p><strong>Small <span class="math notranslate nohighlight">\(N\)</span></strong> (<span class="math notranslate nohighlight">\(&lt; 10^4\)</span> structures): Dominated by Python startup and symmetry detection overhead (~1-2 seconds).</p></li>
+<li><p><strong>Large <span class="math notranslate nohighlight">\(N\)</span></strong> (<span class="math notranslate nohighlight">\(&gt; 10^6\)</span> structures): Scales linearly with the number of unique structures.</p></li>
+</ul>
+<p>Validation against other codes (Supercell, Disorder Tool) has confirmed that SHRY produces identical sets of unique structures (zero deficiency, zero redundancy).</p>
+</section>
+</section>
+<section id="future-development">
+<h2>Future Development<a class="headerlink" href="#future-development" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Parallelization</strong>: The current implementation is single-threaded. Canonical Augmentation is naturally parallelizable (different branches of the tree can be explored independently).</p></li>
+<li><p><strong>Magnetic Structures</strong>: Extending support to Shubnikov groups to handle magnetic spin configurations (up/down).</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../examples.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Examples</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../api_reference_cli.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API reference for command line tools</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#method-canonical-augmentation">Method: Canonical Augmentation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-algorithm">The Algorithm</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#invariant-and-optimization">Invariant and Optimization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#count-estimation-polya-s-enumeration-theorem">Count Estimation: Polya’s Enumeration Theorem</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#implementation-details">Implementation Details</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#core-libraries">Core Libraries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow">Workflow</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-test">Validation Test</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#intra-software-and-inter-software-checks">Intra-software and Inter-software Checks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#future-development">Future Development</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Kosuke Nakano, Genki Imam Prayogo
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, Kosuke Nakano, Genki Imam Prayogo.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

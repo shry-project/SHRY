@@ -1,0 +1,517 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>API reference for modules &#8212; SHRY v0.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=e1a75a79"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference_mod/modules';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="shry package" href="shry.html" />
+    <link rel="prev" title="API reference for command line tools" href="../api_reference_cli.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">SHRY v0.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/shry-project/SHRY" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notes/technical_notes.html">Technical Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference_cli.html">API reference for command line tools</a></li>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">API reference for modules</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="shry.html">shry package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">How to cite SHRY</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/api_reference_mod/modules.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>API reference for modules</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="api-reference-for-modules">
+<h1>API reference for modules<a class="headerlink" href="#api-reference-for-modules" title="Link to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="shry.html">shry package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shry.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shry.html#module-shry.const">shry.const module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shry.html#module-shry.core">shry.core module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.AltCifBlock"><code class="docutils literal notranslate"><span class="pre">AltCifBlock</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.NeedSupercellError"><code class="docutils literal notranslate"><span class="pre">NeedSupercellError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.PatchedSpacegroupAnalyzer"><code class="docutils literal notranslate"><span class="pre">PatchedSpacegroupAnalyzer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatchedSpacegroupAnalyzer.get_symmetrized_structure"><code class="docutils literal notranslate"><span class="pre">PatchedSpacegroupAnalyzer.get_symmetrized_structure()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.PatchedSymmetrizedStructure"><code class="docutils literal notranslate"><span class="pre">PatchedSymmetrizedStructure</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.PatternMaker"><code class="docutils literal notranslate"><span class="pre">PatternMaker</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.ap</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.cached_ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.cached_ap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.get_column_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_column_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.get_index_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_index_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.get_label"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_label()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.get_row_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_row_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.invar"><code class="docutils literal notranslate"><span class="pre">PatternMaker.invar</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.label"><code class="docutils literal notranslate"><span class="pre">PatternMaker.label</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.nocache_ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.nocache_ap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.reindex"><code class="docutils literal notranslate"><span class="pre">PatternMaker.reindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PatternMaker.update_index"><code class="docutils literal notranslate"><span class="pre">PatternMaker.update_index()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.Polya"><code class="docutils literal notranslate"><span class="pre">Polya</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Polya.ci"><code class="docutils literal notranslate"><span class="pre">Polya.ci()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Polya.count"><code class="docutils literal notranslate"><span class="pre">Polya.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Polya.label"><code class="docutils literal notranslate"><span class="pre">Polya.label()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Polya.sym_ci"><code class="docutils literal notranslate"><span class="pre">Polya.sym_ci()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.PolyaCollection"><code class="docutils literal notranslate"><span class="pre">PolyaCollection</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.PolyaCollection.get"><code class="docutils literal notranslate"><span class="pre">PolyaCollection.get()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.Substitutor"><code class="docutils literal notranslate"><span class="pre">Substitutor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.ase_atoms_writers"><code class="docutils literal notranslate"><span class="pre">Substitutor.ase_atoms_writers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.cache"><code class="docutils literal notranslate"><span class="pre">Substitutor.cache</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.cifwriters"><code class="docutils literal notranslate"><span class="pre">Substitutor.cifwriters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.count"><code class="docutils literal notranslate"><span class="pre">Substitutor.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.disorder_groups"><code class="docutils literal notranslate"><span class="pre">Substitutor.disorder_groups</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.ewalds"><code class="docutils literal notranslate"><span class="pre">Substitutor.ewalds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.groupby"><code class="docutils literal notranslate"><span class="pre">Substitutor.groupby</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.letters"><code class="docutils literal notranslate"><span class="pre">Substitutor.letters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.make_patterns"><code class="docutils literal notranslate"><span class="pre">Substitutor.make_patterns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.ordinalize"><code class="docutils literal notranslate"><span class="pre">Substitutor.ordinalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.pattern_makers"><code class="docutils literal notranslate"><span class="pre">Substitutor.pattern_makers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.quantities"><code class="docutils literal notranslate"><span class="pre">Substitutor.quantities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.structure"><code class="docutils literal notranslate"><span class="pre">Substitutor.structure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.structure_writers"><code class="docutils literal notranslate"><span class="pre">Substitutor.structure_writers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.total_count"><code class="docutils literal notranslate"><span class="pre">Substitutor.total_count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.core.Substitutor.weights"><code class="docutils literal notranslate"><span class="pre">Substitutor.weights()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.TooBigError"><code class="docutils literal notranslate"><span class="pre">TooBigError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.aR_array"><code class="docutils literal notranslate"><span class="pre">aR_array()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.formula_double_format_tol"><code class="docutils literal notranslate"><span class="pre">formula_double_format_tol()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.get_integer_formula_and_factor"><code class="docutils literal notranslate"><span class="pre">get_integer_formula_and_factor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.multinomial_coeff"><code class="docutils literal notranslate"><span class="pre">multinomial_coeff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.rec_asc"><code class="docutils literal notranslate"><span class="pre">rec_asc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.core.to_int_dict"><code class="docutils literal notranslate"><span class="pre">to_int_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shry.html#module-shry.main">shry.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.main.LabeledStructure"><code class="docutils literal notranslate"><span class="pre">LabeledStructure</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.main.LabeledStructure.from_file"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.from_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.main.LabeledStructure.read_label"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.read_label()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.main.LabeledStructure.replace_species"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.replace_species()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.main.ScriptHelper"><code class="docutils literal notranslate"><span class="pre">ScriptHelper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.main.ScriptHelper.count"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.main.ScriptHelper.from_file"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.from_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.main.ScriptHelper.save_modified_structure"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.save_modified_structure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.main.ScriptHelper.write"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.main.from_string"><code class="docutils literal notranslate"><span class="pre">from_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.main.parse_oxi_states"><code class="docutils literal notranslate"><span class="pre">parse_oxi_states()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shry.html#module-shry.script">shry.script module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.script.TqdmLoggingHandler"><code class="docutils literal notranslate"><span class="pre">TqdmLoggingHandler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="shry.html#shry.script.TqdmLoggingHandler.emit"><code class="docutils literal notranslate"><span class="pre">TqdmLoggingHandler.emit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.script.get_parser"><code class="docutils literal notranslate"><span class="pre">get_parser()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.script.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.script.print_footer"><code class="docutils literal notranslate"><span class="pre">print_footer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shry.html#shry.script.print_header"><code class="docutils literal notranslate"><span class="pre">print_header()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shry.html#module-shry">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../api_reference_cli.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">API reference for command line tools</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="shry.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">shry package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Kosuke Nakano, Genki Imam Prayogo
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, Kosuke Nakano, Genki Imam Prayogo.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

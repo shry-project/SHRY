@@ -1,0 +1,1320 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>shry package &#8212; SHRY v0.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=e1a75a79"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference_mod/shry';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to cite SHRY" href="../citation.html" />
+    <link rel="prev" title="API reference for modules" href="modules.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">SHRY v0.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/shry-project/SHRY" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notes/technical_notes.html">Technical Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference_cli.html">API reference for command line tools</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="modules.html">API reference for modules</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">shry package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">How to cite SHRY</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/api_reference_mod/shry.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>shry package</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.const">shry.const module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.core">shry.core module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.AltCifBlock"><code class="docutils literal notranslate"><span class="pre">AltCifBlock</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.NeedSupercellError"><code class="docutils literal notranslate"><span class="pre">NeedSupercellError</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatchedSpacegroupAnalyzer"><code class="docutils literal notranslate"><span class="pre">PatchedSpacegroupAnalyzer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatchedSpacegroupAnalyzer.get_symmetrized_structure"><code class="docutils literal notranslate"><span class="pre">PatchedSpacegroupAnalyzer.get_symmetrized_structure()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatchedSymmetrizedStructure"><code class="docutils literal notranslate"><span class="pre">PatchedSymmetrizedStructure</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker"><code class="docutils literal notranslate"><span class="pre">PatternMaker</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.ap</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.cached_ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.cached_ap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_column_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_column_map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_index_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_index_map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_label"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_label()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_row_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_row_map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.invar"><code class="docutils literal notranslate"><span class="pre">PatternMaker.invar</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.label"><code class="docutils literal notranslate"><span class="pre">PatternMaker.label</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.nocache_ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.nocache_ap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.reindex"><code class="docutils literal notranslate"><span class="pre">PatternMaker.reindex()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.update_index"><code class="docutils literal notranslate"><span class="pre">PatternMaker.update_index()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya"><code class="docutils literal notranslate"><span class="pre">Polya</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.ci"><code class="docutils literal notranslate"><span class="pre">Polya.ci()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.count"><code class="docutils literal notranslate"><span class="pre">Polya.count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.label"><code class="docutils literal notranslate"><span class="pre">Polya.label()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.sym_ci"><code class="docutils literal notranslate"><span class="pre">Polya.sym_ci()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PolyaCollection"><code class="docutils literal notranslate"><span class="pre">PolyaCollection</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PolyaCollection.get"><code class="docutils literal notranslate"><span class="pre">PolyaCollection.get()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor"><code class="docutils literal notranslate"><span class="pre">Substitutor</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.ase_atoms_writers"><code class="docutils literal notranslate"><span class="pre">Substitutor.ase_atoms_writers()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.cache"><code class="docutils literal notranslate"><span class="pre">Substitutor.cache</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.cifwriters"><code class="docutils literal notranslate"><span class="pre">Substitutor.cifwriters()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.count"><code class="docutils literal notranslate"><span class="pre">Substitutor.count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.disorder_groups"><code class="docutils literal notranslate"><span class="pre">Substitutor.disorder_groups</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.ewalds"><code class="docutils literal notranslate"><span class="pre">Substitutor.ewalds()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.groupby"><code class="docutils literal notranslate"><span class="pre">Substitutor.groupby</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.letters"><code class="docutils literal notranslate"><span class="pre">Substitutor.letters()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.make_patterns"><code class="docutils literal notranslate"><span class="pre">Substitutor.make_patterns()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.ordinalize"><code class="docutils literal notranslate"><span class="pre">Substitutor.ordinalize()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.pattern_makers"><code class="docutils literal notranslate"><span class="pre">Substitutor.pattern_makers</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.quantities"><code class="docutils literal notranslate"><span class="pre">Substitutor.quantities()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.structure"><code class="docutils literal notranslate"><span class="pre">Substitutor.structure</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.structure_writers"><code class="docutils literal notranslate"><span class="pre">Substitutor.structure_writers()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.total_count"><code class="docutils literal notranslate"><span class="pre">Substitutor.total_count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.weights"><code class="docutils literal notranslate"><span class="pre">Substitutor.weights()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.TooBigError"><code class="docutils literal notranslate"><span class="pre">TooBigError</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.aR_array"><code class="docutils literal notranslate"><span class="pre">aR_array()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.formula_double_format_tol"><code class="docutils literal notranslate"><span class="pre">formula_double_format_tol()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.get_integer_formula_and_factor"><code class="docutils literal notranslate"><span class="pre">get_integer_formula_and_factor()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.multinomial_coeff"><code class="docutils literal notranslate"><span class="pre">multinomial_coeff()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.rec_asc"><code class="docutils literal notranslate"><span class="pre">rec_asc()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.to_int_dict"><code class="docutils literal notranslate"><span class="pre">to_int_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.main">shry.main module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure"><code class="docutils literal notranslate"><span class="pre">LabeledStructure</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure.from_file"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.from_file()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure.read_label"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.read_label()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure.replace_species"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.replace_species()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper"><code class="docutils literal notranslate"><span class="pre">ScriptHelper</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.count"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.from_file"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.from_file()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.save_modified_structure"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.save_modified_structure()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.write"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.from_string"><code class="docutils literal notranslate"><span class="pre">from_string()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.parse_oxi_states"><code class="docutils literal notranslate"><span class="pre">parse_oxi_states()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.script">shry.script module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.TqdmLoggingHandler"><code class="docutils literal notranslate"><span class="pre">TqdmLoggingHandler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.TqdmLoggingHandler.emit"><code class="docutils literal notranslate"><span class="pre">TqdmLoggingHandler.emit()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.get_parser"><code class="docutils literal notranslate"><span class="pre">get_parser()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.print_footer"><code class="docutils literal notranslate"><span class="pre">print_footer()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.print_header"><code class="docutils literal notranslate"><span class="pre">print_header()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry">Module contents</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="shry-package">
+<h1>shry package<a class="headerlink" href="#shry-package" title="Link to this heading">#</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+</section>
+<section id="module-shry.const">
+<span id="shry-const-module"></span><h2>shry.const module<a class="headerlink" href="#module-shry.const" title="Link to this heading">#</a></h2>
+<p>Shared constants</p>
+</section>
+<section id="module-shry.core">
+<span id="shry-core-module"></span><h2>shry.core module<a class="headerlink" href="#module-shry.core" title="Link to this heading">#</a></h2>
+<p>Core operations, pattern generation, etc.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.core.AltCifBlock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">AltCifBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loops</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.AltCifBlock" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">CifBlock</span></code></p>
+<p>CifBlock but optimized for when there are
+many, slightly different blocks:</p>
+<ul class="simple">
+<li><p>Pre-format fields on init, value update, and from_str</p></li>
+<li><p>Cache unchanged strings</p></li>
+<li><p>Loop to list instead of to string</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shry.core.NeedSupercellError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">NeedSupercellError</span></span><a class="headerlink" href="#shry.core.NeedSupercellError" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Just so that this error will raise a distinguishable exception</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.core.PatchedSpacegroupAnalyzer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">PatchedSpacegroupAnalyzer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatchedSpacegroupAnalyzer" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SpacegroupAnalyzer</span></code></p>
+<p>Patched to use PatchedSymmetrizedStructure in get_symmetrized_structure()</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>structure</strong> (<em>Structure</em><em> | </em><em>IStructure</em>)</p></li>
+<li><p><strong>symprec</strong> (<em>float</em>)</p></li>
+<li><p><strong>angle_tolerance</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatchedSpacegroupAnalyzer.get_symmetrized_structure">
+<span class="sig-name descname"><span class="pre">get_symmetrized_structure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatchedSpacegroupAnalyzer.get_symmetrized_structure" title="Link to this definition">#</a></dt>
+<dd><p>Use PatchedSymmetrizedStructure</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.core.PatchedSymmetrizedStructure">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">PatchedSymmetrizedStructure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacegroup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equivalent_positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wyckoff_letters</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatchedSymmetrizedStructure" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SymmetrizedStructure</span></code></p>
+<p>Fixed site_properties display</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>structure</strong> (<em>Structure</em><em> | </em><em>IStructure</em>)</p></li>
+<li><p><strong>spacegroup</strong> (<em>SpacegroupOperations</em>)</p></li>
+<li><p><strong>equivalent_positions</strong> (<em>ArrayLike</em>)</p></li>
+<li><p><strong>wyckoff_letters</strong> (<em>Sequence</em><em>[</em><em>str</em><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.core.PatternMaker">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">PatternMaker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">perm_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enumerator_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sum'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Generate permutationally-unique patterns</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.ap">
+<span class="sig-name descname"><span class="pre">ap</span></span><a class="headerlink" href="#shry.core.PatternMaker.ap" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.cached_ap">
+<span class="sig-name descname"><span class="pre">cached_ap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.cached_ap" title="Link to this definition">#</a></dt>
+<dd><p>Get patterns and automorphisms for the specified replacement amount (cached)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.get_column_map">
+<span class="sig-name descname"><span class="pre">get_column_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.get_column_map" title="Link to this definition">#</a></dt>
+<dd><p>Internal column shuffle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.get_index_map">
+<span class="sig-name descname"><span class="pre">get_index_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.get_index_map" title="Link to this definition">#</a></dt>
+<dd><p>Map between internal representation of elements vs. input</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.get_label">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">perm_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.get_label" title="Link to this definition">#</a></dt>
+<dd><p>Rough equivalence. Byte string from a standardized
+representation of the given permutation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.get_row_map">
+<span class="sig-name descname"><span class="pre">get_row_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.get_row_map" title="Link to this definition">#</a></dt>
+<dd><p>Map between internal order of permutation vs. input permutation</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.invar">
+<span class="sig-name descname"><span class="pre">invar</span></span><a class="headerlink" href="#shry.core.PatternMaker.invar" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.label">
+<span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#shry.core.PatternMaker.label" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.nocache_ap">
+<span class="sig-name descname"><span class="pre">nocache_ap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.nocache_ap" title="Link to this definition">#</a></dt>
+<dd><p>Get patterns and automorphisms for the specified replacement amount</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.reindex">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">reindex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">perm_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.reindex" title="Link to this definition">#</a></dt>
+<dd><p>Standardize symmetry ordering for reuse (rough)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PatternMaker.update_index">
+<span class="sig-name descname"><span class="pre">update_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">perm_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PatternMaker.update_index" title="Link to this definition">#</a></dt>
+<dd><p>Update map for the output pattern.</p>
+<p>This is used to update internal/external map in case
+of similar permutations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the internal permutation is unrelated to the
+    supplied one.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.core.Polya">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">Polya</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">perm_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Polya" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Perform operations related (weighed) Polya Enumeration Theorem.</p>
+<p>Includes enumeration (count) and calculation of cycle index
+and configuration generation function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>perms_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>) – <p>List of permutations as (np.array).
+When specifying multiple substitution involving separated orbits,
+each of the separated group of sites should be assigned their own
+letter in the cycle index to avoid mixing of the substituted species.</p>
+<p>Rows of the arrays corresponds to a single permutation,
+where each element e permutes column c to e (c -&gt; e).
+All arrays should contain the same number of rows.</p>
+</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Polya.ci">
+<span class="sig-name descname"><span class="pre">ci</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Polya.ci" title="Link to this definition">#</a></dt>
+<dd><p>Returns the cycle index (as Counters of cycle lengths per permutation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Dictionary of cycle index with integer index</dt><dd><p>and Counters as a key-value pair.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Polya.count">
+<span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amt_tuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Polya.count" title="Link to this definition">#</a></dt>
+<dd><p>Count unique pattern given.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>amt_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>) – <p>List of list, with the
+numbers in the inner list are coefficients
+of a chemical formula A_xB_y.</p>
+<p>In order to find results, the formula needs to be
+in the integer amount of the number of actual sites
+in the structure.</p>
+<p>Each elements addresses separate orbits.</p>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Number of unique patterns for the given amount.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Polya.label">
+<span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Polya.label" title="Link to this definition">#</a></dt>
+<dd><p>Use ci as label</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Polya.sym_ci">
+<span class="sig-name descname"><span class="pre">sym_ci</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Polya.sym_ci" title="Link to this definition">#</a></dt>
+<dd><p>Returns the symbolic cycle index.
+Uses sympy.IndexedBase to represent subscript.</p>
+<p>Conventionally, each term is in the form of (x_n**m),
+with (n) denoting cycle length and (m) number of
+cycles with such length for a permutation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Dictionary of cycle index with integer index</dt><dd><p>and sympy equations as a key-value pair.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.core.PolyaCollection">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">PolyaCollection</span></span><a class="headerlink" href="#shry.core.PolyaCollection" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Collection of Polya objects. This is useful because identical
+instances are often recreated, with heavy sympy.expand() operations.
+TODO: No longer important so eventually remove.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.PolyaCollection.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">permutation_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.PolyaCollection.get" title="Link to this definition">#</a></dt>
+<dd><p>Get appropriate Polya instance for the given parameters</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.core.Substitutor">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">Substitutor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupby</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1770005113</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_dmat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sum'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Makes unique ordered Structure(s) for the given disorder Structure.</p>
+<p>Since the PatternMaker instances are saved,
+it is advantageous to reuse the same Substitutor
+for symmetrically similar structures.</p>
+<p>This includes different subsitute concentrations
+from the same basic structure, among others.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>structure</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">pymatgen.Structure</span></code>) – Input structure.</p></li>
+<li><p><strong>symprec</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Symmetry precision.</p></li>
+<li><p><strong>angle_tolerance</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Angle tolerance for symmetry search.</p></li>
+<li><p><strong>groupby</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">function</span></code>) – <p>Function to group disordered sites.
+Defaults to lambda x: x.properties[“_atom_site_label”], with the x loops
+over all PeriodicSites within the Structure.</p>
+<p>The proper function depends on what you want; do you want all sites of
+a certain species or crystallographic orbit to be subsituted together?</p>
+<p>Fallback to crystallographic orbit when failed.</p>
+</p></li>
+<li><p><strong>sample</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – Randomly sample the generated structures.</p></li>
+<li><p><strong>no_dmat</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether or not to use distance matrix as
+permutation invariant (faster, default=True)</p></li>
+<li><p><strong>(</strong><strong>)</strong> (<em>t_kind</em>) – (to be written)</p></li>
+<li><p><strong>cache</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>) – By default(=None), cache patterns when involving either
+multiple orbits or multiple species, but otherwise don’t.
+Caching allows “reuse” of previously generated patterns,
+at the cost of memory.
+Set to False if memory is limited,
+but note that pattern generation will be much slower.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.ase_atoms_writers">
+<span class="sig-name descname"><span class="pre">ase_atoms_writers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.ase_atoms_writers" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shry.core.Substitutor.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><a class="headerlink" href="#shry.core.Substitutor.cache" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.cifwriters">
+<span class="sig-name descname"><span class="pre">cifwriters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.cifwriters" title="Link to this definition">#</a></dt>
+<dd><p>Cifwriters generator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.count">
+<span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.count" title="Link to this definition">#</a></dt>
+<dd><p>Final number of patterns.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shry.core.Substitutor.disorder_groups">
+<span class="sig-name descname"><span class="pre">disorder_groups</span></span><a class="headerlink" href="#shry.core.Substitutor.disorder_groups" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.ewalds">
+<span class="sig-name descname"><span class="pre">ewalds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.ewalds" title="Link to this definition">#</a></dt>
+<dd><p>Ewald energy generator.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shry.core.Substitutor.groupby">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">groupby</span></span><a class="headerlink" href="#shry.core.Substitutor.groupby" title="Link to this definition">#</a></dt>
+<dd><p>Function used to divide disorder sites</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.letters">
+<span class="sig-name descname"><span class="pre">letters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.letters" title="Link to this definition">#</a></dt>
+<dd><p>Substitution alphabet representation generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl>
+<dt>(tuple -&gt; np.array) pairs of all pattern letters,</dt><dd><p>separated by (specified) orbit.</p>
+<p>Each row of the array is a pattern for the key orbit.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.make_patterns">
+<span class="sig-name descname"><span class="pre">make_patterns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.make_patterns" title="Link to this definition">#</a></dt>
+<dd><p>“Raw” pattern of the all disorder sites.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of list of sites with a distinct species.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.ordinalize">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ordinalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.ordinalize" title="Link to this definition">#</a></dt>
+<dd><p>Ordinalize array elements to the specified absolute tolerance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>array</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.array</span></code>) – The array to be ordinalized.</p></li>
+<li><p><strong>atol</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Absolute tolerance. Defaults to 1e-5.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ordinalized array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shry.core.Substitutor.pattern_makers">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">pattern_makers</span></span><a class="headerlink" href="#shry.core.Substitutor.pattern_makers" title="Link to this definition">#</a></dt>
+<dd><p>PatternMaker instances in key-value pairs with its label as key</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.quantities">
+<span class="sig-name descname"><span class="pre">quantities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.quantities" title="Link to this definition">#</a></dt>
+<dd><p>Mixed quantities generator.
+Yield tuple of selected quantities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>q</strong> – (list) valid options: (“cifwriter”, “weight”, “letter”, “ewald”, “structure”)
+will return in this order.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shry.core.Substitutor.structure">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">structure</span></span><a class="headerlink" href="#shry.core.Substitutor.structure" title="Link to this definition">#</a></dt>
+<dd><p>Input Structure containing disorder sites</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.structure_writers">
+<span class="sig-name descname"><span class="pre">structure_writers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.structure_writers" title="Link to this definition">#</a></dt>
+<dd><p>Pymatgen Structures generator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.total_count">
+<span class="sig-name descname"><span class="pre">total_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.total_count" title="Link to this definition">#</a></dt>
+<dd><p>Total number of combinations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.core.Substitutor.weights">
+<span class="sig-name descname"><span class="pre">weights</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.Substitutor.weights" title="Link to this definition">#</a></dt>
+<dd><p>Pattern weights generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of weights of all patterns.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shry.core.TooBigError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">TooBigError</span></span><a class="headerlink" href="#shry.core.TooBigError" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>When the number of substitution is too large</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.core.aR_array">
+<span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">aR_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.aR_array" title="Link to this definition">#</a></dt>
+<dd><p>aR() cache.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.core.formula_double_format_tol">
+<span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">formula_double_format_tol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">afloat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_ones</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.formula_double_format_tol" title="Link to this definition">#</a></dt>
+<dd><p>This function is used to make pretty formulas by formatting the amounts.
+Instead of Li1.0 Fe1.0 P1.0 O4.0, you get LiFePO4.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>afloat</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – a float</p></li>
+<li><p><strong>ignore_ones</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – if true, floats of 1 are ignored.</p></li>
+<li><p><strong>tol</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Tolerance to round to nearest int. i.e. 2.0000000001 -&gt; 2</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A string representation of the float for formulas.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.core.get_integer_formula_and_factor">
+<span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">get_integer_formula_and_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_denominator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">99999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iupac_ordering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.get_integer_formula_and_factor" title="Link to this definition">#</a></dt>
+<dd><p>The default Composition groups together different ox states which is not ideal…</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_denominator</strong> (<em>int</em>)</p></li>
+<li><p><strong>iupac_ordering</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Tuple</em>[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.core.multinomial_coeff">
+<span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">multinomial_coeff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.multinomial_coeff" title="Link to this definition">#</a></dt>
+<dd><p>Get multinomial coefficient of (sum(a), (a_1, a_2, …))</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.core.rec_asc">
+<span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">rec_asc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.rec_asc" title="Link to this definition">#</a></dt>
+<dd><p>Recursive part of the thing below</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.core.to_int_dict">
+<span class="sig-prename descclassname"><span class="pre">shry.core.</span></span><span class="sig-name descname"><span class="pre">to_int_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.core.to_int_dict" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict with element symbol and integer amount</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-shry.main">
+<span id="shry-main-module"></span><h2>shry.main module<a class="headerlink" href="#module-shry.main" title="Link to this heading">#</a></h2>
+<p>Main task abstraction</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.main.LabeledStructure">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.main.</span></span><span class="sig-name descname"><span class="pre">LabeledStructure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lattice</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_proximity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_unit_cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_are_cartesian</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.LabeledStructure" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Structure</span></code></p>
+<p>Structure + CIF’s _atom_site_label</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lattice</strong> (<em>ArrayLike</em><em> | </em><em>Lattice</em>)</p></li>
+<li><p><strong>species</strong> (<em>Sequence</em><em>[</em><em>CompositionLike</em><em>]</em>)</p></li>
+<li><p><strong>coords</strong> (<em>Sequence</em><em>[</em><em>ArrayLike</em><em>] </em><em>| </em><em>ArrayLike</em>)</p></li>
+<li><p><strong>charge</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>validate_proximity</strong> (<em>bool</em>)</p></li>
+<li><p><strong>to_unit_cell</strong> (<em>bool</em>)</p></li>
+<li><p><strong>coords_are_cartesian</strong> (<em>bool</em>)</p></li>
+<li><p><strong>site_properties</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>labels</strong> (<em>Sequence</em><em>[</em><em>str</em><em> | </em><em>None</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>properties</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.main.LabeledStructure.from_file">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primitive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetrize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.LabeledStructure.from_file" title="Link to this definition">#</a></dt>
+<dd><p>Read a structure from a file. For example, anything ending in
+a “cif” is assumed to be a Crystallographic Information Format file.
+Supported formats include CIF, POSCAR/CONTCAR, CHGCAR, LOCPOT,
+vasprun.xml, CSSR, Netcdf and pymatgen’s JSON-serialized structures.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PathLike</span></code>) – The file to read.</p></li>
+<li><p><strong>primitive</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to convert to a primitive cell. Defaults to False.</p></li>
+<li><p><strong>sort</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to sort sites. Default to False.</p></li>
+<li><p><strong>merge_tol</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – If this is some positive number, sites that are within merge_tol from each other will be
+merged. Usually 0.01 should be enough to deal with common numerical issues.</p></li>
+<li><p><strong>kwargs</strong> – Passthrough to relevant reader. E.g. if the file has CIF format, the kwargs will be passed
+through to CifParser.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Structure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.main.LabeledStructure.read_label">
+<span class="sig-name descname"><span class="pre">read_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cif_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetrize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.LabeledStructure.read_label" title="Link to this definition">#</a></dt>
+<dd><p>Add _atom_site_label as site_properties.
+This is useful for enforcing a certain concentration over
+a group of sites, which may not necessarily consists
+of a single orbit after enlargement to a supercell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cif_filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – Source CIF file.</p></li>
+<li><p><strong>symprec</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Precision for the symmetry operations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If any sites couldn’t be matched
+    to one any sites defined within the CIF.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.main.LabeledStructure.replace_species">
+<span class="sig-name descname"><span class="pre">replace_species</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">species_mapping</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.LabeledStructure.replace_species" title="Link to this definition">#</a></dt>
+<dd><p>Replace sites from species to another species,
+or labels from _atom_site_label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>species_mapping</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>) – from-to map of the species to be replaced.
+(string) to (string).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If no sites matches at least one of the from_species
+    specification.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.main.ScriptHelper">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.main.</span></span><span class="sig-name descname"><span class="pre">ScriptHelper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_species</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_species</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaling_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetrize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1770005113</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symprec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dir_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_symm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_ewald</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_ewald</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_dmat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sum'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.ScriptHelper" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Combine configurations into typical workflow in single methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.main.ScriptHelper.count">
+<span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.ScriptHelper.count" title="Link to this definition">#</a></dt>
+<dd><p>Count the number of unique substituted structures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.main.ScriptHelper.from_file">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.ScriptHelper.from_file" title="Link to this definition">#</a></dt>
+<dd><p>Reads <cite>*.ini</cite> file containing command line arguments</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.main.ScriptHelper.save_modified_structure">
+<span class="sig-name descname"><span class="pre">save_modified_structure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.ScriptHelper.save_modified_structure" title="Link to this definition">#</a></dt>
+<dd><p>Save adjusted structure</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.main.ScriptHelper.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.ScriptHelper.write" title="Link to this definition">#</a></dt>
+<dd><p>Save the irreducible structures</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.main.from_string">
+<span class="sig-prename descclassname"><span class="pre">shry.main.</span></span><span class="sig-name descname"><span class="pre">from_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">composition_string</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.from_string" title="Link to this definition">#</a></dt>
+<dd><p>Workaround when working with strings including oxication states</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Composition</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.main.parse_oxi_states">
+<span class="sig-prename descclassname"><span class="pre">shry.main.</span></span><span class="sig-name descname"><span class="pre">parse_oxi_states</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.main.parse_oxi_states" title="Link to this definition">#</a></dt>
+<dd><p>Parse oxidation states from data dictionary</p>
+</dd></dl>
+
+</section>
+<section id="module-shry.script">
+<span id="shry-script-module"></span><h2>shry.script module<a class="headerlink" href="#module-shry.script" title="Link to this heading">#</a></h2>
+<p>Command line interface.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="shry.script.TqdmLoggingHandler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">shry.script.</span></span><span class="sig-name descname"><span class="pre">TqdmLoggingHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.script.TqdmLoggingHandler" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Handler</span></code></p>
+<p>Prevent logging from overwriting tqdm</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="shry.script.TqdmLoggingHandler.emit">
+<span class="sig-name descname"><span class="pre">emit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shry.script.TqdmLoggingHandler.emit" title="Link to this definition">#</a></dt>
+<dd><p>Do whatever it takes to actually log the specified logging record.</p>
+<p>This version is intended to be implemented by subclasses and so
+raises a NotImplementedError.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.script.get_parser">
+<span class="sig-prename descclassname"><span class="pre">shry.script.</span></span><span class="sig-name descname"><span class="pre">get_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.script.get_parser" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.script.main">
+<span class="sig-prename descclassname"><span class="pre">shry.script.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.script.main" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.script.print_footer">
+<span class="sig-prename descclassname"><span class="pre">shry.script.</span></span><span class="sig-name descname"><span class="pre">print_footer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.script.print_footer" title="Link to this definition">#</a></dt>
+<dd><p>Print footer text</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shry.script.print_header">
+<span class="sig-prename descclassname"><span class="pre">shry.script.</span></span><span class="sig-name descname"><span class="pre">print_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shry.script.print_header" title="Link to this definition">#</a></dt>
+<dd><p>Print header text</p>
+</dd></dl>
+
+</section>
+<section id="module-shry">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-shry" title="Link to this heading">#</a></h2>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="modules.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">API reference for modules</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../citation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How to cite SHRY</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.const">shry.const module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.core">shry.core module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.AltCifBlock"><code class="docutils literal notranslate"><span class="pre">AltCifBlock</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.NeedSupercellError"><code class="docutils literal notranslate"><span class="pre">NeedSupercellError</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatchedSpacegroupAnalyzer"><code class="docutils literal notranslate"><span class="pre">PatchedSpacegroupAnalyzer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatchedSpacegroupAnalyzer.get_symmetrized_structure"><code class="docutils literal notranslate"><span class="pre">PatchedSpacegroupAnalyzer.get_symmetrized_structure()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatchedSymmetrizedStructure"><code class="docutils literal notranslate"><span class="pre">PatchedSymmetrizedStructure</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker"><code class="docutils literal notranslate"><span class="pre">PatternMaker</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.ap</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.cached_ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.cached_ap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_column_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_column_map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_index_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_index_map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_label"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_label()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.get_row_map"><code class="docutils literal notranslate"><span class="pre">PatternMaker.get_row_map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.invar"><code class="docutils literal notranslate"><span class="pre">PatternMaker.invar</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.label"><code class="docutils literal notranslate"><span class="pre">PatternMaker.label</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.nocache_ap"><code class="docutils literal notranslate"><span class="pre">PatternMaker.nocache_ap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.reindex"><code class="docutils literal notranslate"><span class="pre">PatternMaker.reindex()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PatternMaker.update_index"><code class="docutils literal notranslate"><span class="pre">PatternMaker.update_index()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya"><code class="docutils literal notranslate"><span class="pre">Polya</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.ci"><code class="docutils literal notranslate"><span class="pre">Polya.ci()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.count"><code class="docutils literal notranslate"><span class="pre">Polya.count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.label"><code class="docutils literal notranslate"><span class="pre">Polya.label()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Polya.sym_ci"><code class="docutils literal notranslate"><span class="pre">Polya.sym_ci()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PolyaCollection"><code class="docutils literal notranslate"><span class="pre">PolyaCollection</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.PolyaCollection.get"><code class="docutils literal notranslate"><span class="pre">PolyaCollection.get()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor"><code class="docutils literal notranslate"><span class="pre">Substitutor</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.ase_atoms_writers"><code class="docutils literal notranslate"><span class="pre">Substitutor.ase_atoms_writers()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.cache"><code class="docutils literal notranslate"><span class="pre">Substitutor.cache</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.cifwriters"><code class="docutils literal notranslate"><span class="pre">Substitutor.cifwriters()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.count"><code class="docutils literal notranslate"><span class="pre">Substitutor.count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.disorder_groups"><code class="docutils literal notranslate"><span class="pre">Substitutor.disorder_groups</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.ewalds"><code class="docutils literal notranslate"><span class="pre">Substitutor.ewalds()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.groupby"><code class="docutils literal notranslate"><span class="pre">Substitutor.groupby</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.letters"><code class="docutils literal notranslate"><span class="pre">Substitutor.letters()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.make_patterns"><code class="docutils literal notranslate"><span class="pre">Substitutor.make_patterns()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.ordinalize"><code class="docutils literal notranslate"><span class="pre">Substitutor.ordinalize()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.pattern_makers"><code class="docutils literal notranslate"><span class="pre">Substitutor.pattern_makers</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.quantities"><code class="docutils literal notranslate"><span class="pre">Substitutor.quantities()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.structure"><code class="docutils literal notranslate"><span class="pre">Substitutor.structure</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.structure_writers"><code class="docutils literal notranslate"><span class="pre">Substitutor.structure_writers()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.total_count"><code class="docutils literal notranslate"><span class="pre">Substitutor.total_count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.Substitutor.weights"><code class="docutils literal notranslate"><span class="pre">Substitutor.weights()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.TooBigError"><code class="docutils literal notranslate"><span class="pre">TooBigError</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.aR_array"><code class="docutils literal notranslate"><span class="pre">aR_array()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.formula_double_format_tol"><code class="docutils literal notranslate"><span class="pre">formula_double_format_tol()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.get_integer_formula_and_factor"><code class="docutils literal notranslate"><span class="pre">get_integer_formula_and_factor()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.multinomial_coeff"><code class="docutils literal notranslate"><span class="pre">multinomial_coeff()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.rec_asc"><code class="docutils literal notranslate"><span class="pre">rec_asc()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.core.to_int_dict"><code class="docutils literal notranslate"><span class="pre">to_int_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.main">shry.main module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure"><code class="docutils literal notranslate"><span class="pre">LabeledStructure</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure.from_file"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.from_file()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure.read_label"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.read_label()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.LabeledStructure.replace_species"><code class="docutils literal notranslate"><span class="pre">LabeledStructure.replace_species()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper"><code class="docutils literal notranslate"><span class="pre">ScriptHelper</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.count"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.count()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.from_file"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.from_file()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.save_modified_structure"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.save_modified_structure()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.ScriptHelper.write"><code class="docutils literal notranslate"><span class="pre">ScriptHelper.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.from_string"><code class="docutils literal notranslate"><span class="pre">from_string()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.main.parse_oxi_states"><code class="docutils literal notranslate"><span class="pre">parse_oxi_states()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry.script">shry.script module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.TqdmLoggingHandler"><code class="docutils literal notranslate"><span class="pre">TqdmLoggingHandler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.TqdmLoggingHandler.emit"><code class="docutils literal notranslate"><span class="pre">TqdmLoggingHandler.emit()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.get_parser"><code class="docutils literal notranslate"><span class="pre">get_parser()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.print_footer"><code class="docutils literal notranslate"><span class="pre">print_footer()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script.print_header"><code class="docutils literal notranslate"><span class="pre">print_header()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-shry">Module contents</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Kosuke Nakano, Genki Imam Prayogo
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, Kosuke Nakano, Genki Imam Prayogo.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
