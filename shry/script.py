@@ -74,7 +74,7 @@ def print_footer():
     logging.info(const.HLINE)
 
 
-def main():  # pylint: disable=missing-function-docstring
+def get_parser():
     parser = argparse.ArgumentParser(
         epilog=f"SHRY version {shry_version}",
         description="Quick use: `shry STRUCTURE_CIF`. See `shry -h` for more options.",
@@ -230,6 +230,11 @@ def main():  # pylint: disable=missing-function-docstring
         # ),
         help=argparse.SUPPRESS,
     )
+    return parser
+
+
+def main():  # pylint: disable=missing-function-docstring
+    parser = get_parser()
     args = parser.parse_args()
     const.DISABLE_PROGRESSBAR = args.disable_progressbar
 
