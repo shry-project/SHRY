@@ -11,7 +11,7 @@
 [![fork](https://img.shields.io/github/forks/shry-project/SHRY?style=social)](https://github.com/shry-project/SHRY/forks)
 [![stars](https://img.shields.io/github/stars/shry-project/SHRY?style=social)](https://github.com/shry-project/SHRY/stargazers)
 
-SHRY (**S**uite for **H**igh-th**r**oughput generation of models with atomic substitutions implemented by p**y**thon) is a tool for generating unique ordered structures corresponding to a given disordered structure.
+SHRY (**S**uite for **H**igh-th**r**oughput generation of models with atomic substitutions implemented by p**y**thon) is a tool for generating unique ordered structures corresponding to a given disordered structure. The documentation is available [here](https://shry-project.github.io/SHRY/).
 
 ## How to cite
 
@@ -40,6 +40,7 @@ git clone https://github.com/shry-project/SHRY.git
 cd shry
 pip install -e .
 ```
+
 
 ## Quick use
 
@@ -103,7 +104,7 @@ or you can refer to the documentation.
 
 ## Documentation
 
-The documentation is available [here](https://shry.readthedocs.io/en/latest/).
+The documentation is available [here](https://shry-project.github.io/SHRY/).
 
 ## Contributing to the project
 
