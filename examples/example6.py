@@ -19,7 +19,7 @@ from shry import ScriptHelper
 helper = ScriptHelper(
     structure_file="PbSnTe.cif",  # Replace with your CIF if desired
     from_species=("Sn",),
-    to_species=("Sn0.5Sb0.5",),
+    to_species=("Sn0.5Se0.5",),
     scaling_matrix=(2, 2, 1),  # enlarge to break more symmetry and get multiple patterns
 )
 
@@ -29,7 +29,16 @@ lowest_100 = []
 
 for i, structure in enumerate(helper.substitutor.structure_writers()):
     try:
-        structure.add_oxidation_state_by_guess()
+        # Ensure oxidation states are set explicitly for this system.
+        structure.remove_oxidation_states()
+        structure.add_oxidation_state_by_element(
+            {
+                "Pb": +2,
+                "Sn": +2,
+                "Se": +4,
+                "Te": -2,
+            }
+        )
         energy = EwaldSummation(structure).total_energy
     except Exception as exc:  # noqa: BLE001 - narrow for clarity in real workflows
         print(f"Skipping structure {i}: {exc}")

@@ -11,16 +11,15 @@ import logging
 import math
 import random
 import sys
-from typing import OrderedDict, Tuple
+from typing import OrderedDict
 
 # python modules
 import numpy as np
 import spglib
 import sympy
 import tqdm
-from monty.fractions import gcd_float
 from pymatgen.analysis.ewald import EwaldSummation
-from pymatgen.core.composition import Composition, reduce_formula
+from pymatgen.core.composition import Composition
 from pymatgen.io.cif import CifBlock, CifParser, CifWriter
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer, SpacegroupOperations
 from pymatgen.symmetry.structure import SymmetrizedStructure
@@ -29,11 +28,11 @@ from pymatgen.util.string import transformation_to_string
 from scipy.special import comb
 from sympy.utilities.iterables import multiset_permutations
 from tabulate import tabulate
-from pymatgen.core.periodic_table import get_el_sp
 from pymatgen.core import Structure
 
 # shry modules
 from . import const
+from .patches import apply_pymatgen_patches
 
 # shry version control
 try:
@@ -45,99 +44,9 @@ np.seterr(all="raise")
 np.set_printoptions(linewidth=const.LINEWIDTH, threshold=16)
 np.set_printoptions(linewidth=1000, threshold=sys.maxsize)
 
+spglib.OLD_ERROR_HANDLING = False
 
-def get_integer_formula_and_factor(
-    self,
-    max_denominator: int = int(1 / const.DEFAULT_ATOL),
-    iupac_ordering: bool = False,
-) -> Tuple[str, float]:
-    """The default Composition groups together different ox states which is not ideal..."""
-    el_amt = self.as_dict()
-    g = gcd_float(list(el_amt.values()), 1 / max_denominator)
-
-    d = {k: round(v / g) for k, v in el_amt.items()}
-    (formula, factor) = reduce_formula(d, iupac_ordering=iupac_ordering)
-    if formula in Composition.special_formulas:
-        formula = Composition.special_formulas[formula]
-        factor /= 2
-    return formula, factor * g
-
-
-# Patched extra functionalities and bug fixes on top of Pymatgen's classes.
-def to_int_dict(self):
-    """
-    Returns:
-        Dict with element symbol and integer amount
-    """
-    _, factor = self.get_integer_formula_and_factor(max_denominator=int(1 / const.DEFAULT_ATOL))
-    int_dict = {e: int(a) for e, a in (self / factor).as_dict().items()}
-
-    # be safe: Composition groups together different ox states which is not ideal...
-    for x, y in zip(int_dict.values(), self.as_dict().values()):
-        if not np.isclose(x * factor, y, atol=const.DEFAULT_ATOL):
-            raise ValueError(
-                "Composition (Occupancy) is not rational! Please try to increase significant digits "
-                "e.g., 1/3 = 0.3333 -> 1/3 = 0.3333333333333."
-            )
-
-    return int_dict
-
-
-@property
-def inted_composition(self):
-    """
-    Return Composition instance with integer formula
-    """
-    _, factor = self.get_integer_formula_and_factor(max_denominator=int(1 / const.DEFAULT_ATOL))
-    int_comp = self / factor
-
-    # be safe
-    int_dict = {e: int(a) for e, a in int_comp.as_dict().items()}
-    if not all(np.isclose(x * factor, y, atol=const.DEFAULT_ATOL) for x, y in zip(int_dict.values(), self.as_dict().values())):
-        raise ValueError(
-            "Composition (Occupancy) is not rational! Please try to increase significant digits "
-            "e.g., 1/3 = 0.3333 -> 1/3 = 0.3333333333333."
-        )
-
-    return int_comp
-
-
-def formula_double_format_tol(afloat, ignore_ones=True, tol: float = const.DEFAULT_ATOL * 10):
-    """
-    This function is used to make pretty formulas by formatting the amounts.
-    Instead of Li1.0 Fe1.0 P1.0 O4.0, you get LiFePO4.
-
-    Args:
-        afloat (float): a float
-        ignore_ones (bool): if true, floats of 1 are ignored.
-        tol (float): Tolerance to round to nearest int. i.e. 2.0000000001 -> 2
-
-    Returns:
-        A string representation of the float for formulas.
-    """
-    if ignore_ones and afloat == 1:
-        return ""
-    if abs(afloat - round(afloat)) < tol:
-        return round(afloat)
-    return round(afloat, 8)
-
-
-@property
-def formula(self) -> str:
-    """
-    Returns a formula string, with elements sorted by electronegativity,
-    e.g., Li4 Fe4 P4 O16.
-    """
-    sym_amt = self.get_el_amt_dict()
-    syms = sorted(sym_amt, key=lambda sym: get_el_sp(sym).X)
-    formula = [f"{s}{formula_double_format_tol(sym_amt[s], False)}" for s in syms]
-    return " ".join(formula)
-
-
-Composition.to_int_dict = to_int_dict
-Composition.get_integer_formula_and_factor = get_integer_formula_and_factor
-Composition.inted_composition = inted_composition
-Composition.formula = formula
+apply_pymatgen_patches()
 
 
 class PatchedSymmetrizedStructure(SymmetrizedStructure):
@@ -198,7 +107,7 @@ class PatchedSpacegroupAnalyzer(SpacegroupAnalyzer):
             self.get_space_group_number(),
             self.get_symmetry_operations(),
         )
-        return PatchedSymmetrizedStructure(self._structure, sg, ds["equivalent_atoms"], ds["wyckoffs"])
+        return PatchedSymmetrizedStructure(self._structure, sg, ds.equivalent_atoms, ds.wyckoffs)
 
 
 class AltCifBlock(CifBlock):
@@ -302,9 +211,6 @@ class AltCifBlock(CifBlock):
                 self.string_cache[k] = s
 
 
-# I just want distinguishable exceptions
-
-
 class NeedSupercellError(Exception):
     """
     Just so that this error will raise a distinguishable exception
@@ -319,9 +225,6 @@ class TooBigError(Exception):
     """
 
     ...
-
-
-# Some numerical methods
 
 
 def rec_asc(a, n, m, k, length):
@@ -408,7 +311,7 @@ class Substitutor:
         "_atol",
         "_symmops",
         "_pms",
-        "_enumerator_collection",
+        "_get_polya",
         "disorder_groups",
         "_group_dmat",
         "_group_perms",
@@ -463,7 +366,7 @@ class Substitutor:
         self.cache = cache
         self._symmops = None
         self._pms = dict()
-        self._enumerator_collection = PolyaCollection()
+        self._get_polya = get_polya
 
         self.disorder_groups = dict()
         self._group_dmat = dict()
@@ -528,7 +431,7 @@ class Substitutor:
         logging.info(f"Space group: {sga.get_hall()} ({sga.get_space_group_number()})")
         logging.info(f"Total {len(self._symmops)} symmetry operations")
         logging.info(sga.get_symmetrized_structure())
-        equivalent_atoms = sga.get_symmetry_dataset()["equivalent_atoms"]
+        equivalent_atoms = sga.get_symmetry_dataset().equivalent_atoms
 
         # Identify and label disorder sites.
         # Index is used for later recoloring the sites.
@@ -759,7 +662,7 @@ class Substitutor:
             pm = PatternMaker(
                 subperm,
                 invar=dmat,
-                enumerator_collection=self._enumerator_collection,
+                enumerator_collection=self._get_polya,
                 t_kind=self._t_kind,
                 shuffle=self._shuffle,
                 rg=self._rg,
@@ -777,7 +680,7 @@ class Substitutor:
                 pm = PatternMaker(
                     subperm,
                     invar=dmat,
-                    enumerator_collection=self._enumerator_collection,
+                    enumerator_collection=self._get_polya,
                     t_kind=self._t_kind,
                     cache=self.cache,
                     shuffle=self._shuffle,
@@ -864,13 +767,13 @@ class Substitutor:
         logging.info(f"\nCounting unique patterns for {self.structure.formula}")
 
         if len(self._symmops):
-            enumerator = self._enumerator_collection.get(
+            enumerator = self._get_polya(
                 # orbit_symmetries,
                 list(self._group_perms.values()),
                 len(self._symmops),
             )
         else:  # No-permutations-supplied
-            enumerator = self._enumerator_collection.get([])
+            enumerator = self._get_polya([])
         count = enumerator.count(tuple(self._disorder_amounts().values()))
         return count
 
@@ -1032,6 +935,15 @@ class Substitutor:
                     subpattern = next(pi)
                     for i in subpattern:
                         template_structure.sites[indices[i]].species = e
+            # NOTE: Ensure unique labels only for template creation to avoid CIF warnings.
+            # This does not affect actual output labels, which are overwritten below.
+            labels = [f"{site.species_string}{i}" for i, site in enumerate(template_structure.sites)]
+            if "_atom_site_label" in template_structure.site_properties:
+                template_structure.remove_site_property("_atom_site_label")
+            template_structure.add_site_property("_atom_site_label", labels)
+            for label, site in zip(labels, template_structure.sites):
+                if hasattr(site, "label"):
+                    site.label = label
             cifwriter = CifWriter(template_structure)
 
             # Use faster CifBlock implementation
@@ -1100,14 +1012,17 @@ class Substitutor:
                 angle_tolerance=self._angle_tolerance,
             )
 
+            rotations = space_group_data.rotations
+            translations = space_group_data.translations
+            equivalent_atoms = space_group_data.equivalent_atoms
+            international = space_group_data.international
+            number = space_group_data.number
+
             ops = [
                 transformation_to_string(rot, trans, delim=", ")
-                for rot, trans in zip(
-                    space_group_data["rotations"],
-                    space_group_data["translations"],
-                )
+                for rot, trans in zip(rotations, translations)
             ]
-            u, inv = np.unique(space_group_data["equivalent_atoms"], return_inverse=True)
+            u, inv = np.unique(equivalent_atoms, return_inverse=True)
             equivalent_indices = [[] for _ in range(len(u))]
             for j, inv in enumerate(inv):
                 equivalent_indices[inv].append(j)
@@ -1132,8 +1047,8 @@ class Substitutor:
                 ),
             )
 
-            block["_symmetry_space_group_name_H-M"] = space_group_data["international"]
-            block["_symmetry_Int_Tables_number"] = space_group_data["number"]
+            block["_symmetry_space_group_name_H-M"] = international
+            block["_symmetry_Int_Tables_number"] = number
             block["_symmetry_equiv_pos_site_id"] = [str(i) for i in range(1, len(ops) + 1)]
             block["_symmetry_equiv_pos_as_xyz"] = ops
 
@@ -1186,10 +1101,10 @@ class Substitutor:
         # TODO: less ad hoc implementation.
         cifwriter = self._get_cifwriter(p, symprec)
         cifparser = CifParser.from_str(str(cifwriter))
-        structure = cifparser.get_structures(primitive=False)[0]
+        structure = cifparser.parse_structures(primitive=False)[0]
         try:
             if not np.isclose(structure.charge, 0.0):
-                logging.warn(f"Unit cell is charged: (total charge = {structure.charge}).")
+                logging.warning(f"Unit cell is charged: (total charge = {structure.charge}).")
             return EwaldSummation(structure).total_energy
         except TypeError as exc:
             raise ValueError("Ewald summation required CIFs with defined oxidation states.") from exc
@@ -1203,7 +1118,7 @@ class PatternMaker:
     __slots__ = (
         "_search",
         "ap",
-        "_enumerator_collection",
+        "_get_polya",
         "_patterns",
         "_auts",
         "_subobj_ts",
@@ -1297,9 +1212,11 @@ class PatternMaker:
             self._iterate = np.flatnonzero
 
         if enumerator_collection is None:
-            self._enumerator_collection = PolyaCollection()
+            self._get_polya = get_polya
+        elif callable(enumerator_collection):
+            self._get_polya = enumerator_collection
         else:
-            self._enumerator_collection = enumerator_collection
+            self._get_polya = enumerator_collection.get
 
         (
             column_index,
@@ -1515,7 +1432,7 @@ class PatternMaker:
             stop = self._nix // 2
         stop = min(stop, self._nix - stop)
 
-        enumerator = self._enumerator_collection.get([self._perms])
+        enumerator = self._get_polya([self._perms])
         n_pred = enumerator.count(((stop, self._nix - stop),))
 
         # Progress bar.
@@ -1653,7 +1570,7 @@ class PatternMaker:
             stop = self._nix // 2
         stop = min(stop, self._nix - stop)
 
-        enumerator = self._enumerator_collection.get([self._perms])
+        enumerator = self._get_polya([self._perms])
         n_pred = enumerator.count(((stop, self._nix - stop),))
 
         # Progress bar.
@@ -1945,30 +1862,25 @@ class Polya:
         return int(sum(o_counts) / self.group_size)
 
 
-class PolyaCollection:
+def _serialize_perm_list(permutation_list):
+    return tuple((arr.shape, arr.dtype.str, arr.tobytes()) for arr in permutation_list)
+
+
+def _deserialize_perm_list(serialized):
+    return [np.frombuffer(data, dtype=np.dtype(dtype)).reshape(shape) for shape, dtype, data in serialized]
+
+
+@functools.lru_cache(None)
+def _get_polya_cached(serialized_perms, group_size=None):
+    perm_list = _deserialize_perm_list(serialized_perms)
+    return Polya(perm_list, group_size)
+
+
+def get_polya(permutation_list, group_size=None):
     """
-    Collection of Polya objects. This is useful because identical
-    instances are often recreated, with heavy sympy.expand() operations.
-    TODO: No longer important so eventually remove.
+    Return a cached Polya instance for the given permutation list.
+
+    Uses an lru_cache by serializing permutation arrays into a hashable key.
     """
-
-    def __init__(self):
-        self._collection = dict()
-
-    def __getitem__(self, key):
-        return self._collection[key]
-
-    def __setitem__(self, key, value):
-        self._collection[key] = value
-
-    def get(self, permutation_list, group_size=None):
-        """
-        Get appropriate Polya instance for the given parameters
-        """
-        polya = Polya(permutation_list, group_size)
-        label = polya.label()
-        if label in self._collection:
-            return self._collection[label]
-        else:
-            self._collection[label] = polya
-            return polya
+    serialized = _serialize_perm_list(permutation_list)
+    return _get_polya_cached(serialized, group_size)

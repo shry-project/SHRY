@@ -7,8 +7,6 @@ Main task abstraction
 
 # python modules
 import ast
-import collections
-import configparser
 import datetime
 import io
 import itertools
@@ -16,26 +14,25 @@ import logging
 import math
 import operator
 import os
-import re
 import shutil
 import signal
 import sys
 from fnmatch import fnmatch
+from dataclasses import dataclass
 
 # python modules
 import numpy as np
 import tqdm
-from pymatgen.core import Composition, PeriodicSite, Species, Structure
-from pymatgen.core.composition import CompositionError
+from pymatgen.core import Composition, PeriodicSite, Structure
 from pymatgen.core.lattice import Lattice
-from pymatgen.io.cif import CifParser, str2float
-from pymatgen.io.vasp.inputs import Poscar
+from pymatgen.io.cif import CifParser
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer, SpacegroupOperations
 from pymatgen.util.coord import in_coord_list_pbc, lattice_points_in_supercell
 
 # shry modules
 from . import const
 from .core import Substitutor
+from .patches import apply_pymatgen_patches
 
 # shry version control
 try:
@@ -43,124 +40,110 @@ try:
 except (ModuleNotFoundError, ImportError):
     shry_version = "unknown (not installed)"
 
-# Runtime patches to pymatgen's Composition and Poscar.
-# We want some extra functions like separating different oxidation states, etc.
+apply_pymatgen_patches()
 
 
-def from_string(composition_string) -> Composition:
+@dataclass(frozen=True)
+class RunConfig:
+    structure_file: str
+    from_species: list
+    to_species: list
+    scaling_matrix: np.ndarray
+    symmetrize: bool
+    sample: int | str | None
+    seed: int
+    symprec: float
+    atol: float
+    angle_tolerance: float
+    dir_size: int
+    write_symm: bool
+    write_ewald: bool
+    max_ewald: float | None
+    no_write: bool
+    no_dmat: bool
+    t_kind: str
+    no_cache: bool = False
+
+
+def _math_eval(expr):
     """
-    Workaround when working with strings including oxication states
+    Like eval() but limit to +-/*^** expressions for security
     """
+    operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.Pow: operator.pow,
+        ast.BitXor: operator.xor,
+        ast.USub: operator.neg,
+    }
 
-    def composition_builder():
-        components = re.findall(r"[A-z][a-z]*[0-9.\+\-]*[0-9.]*", composition_string)
-        amount = re.compile(r"(?<=[\+\-A-Za-z])[0-9.]+(?![\+\-])")
-        amount_part = [amount.findall(x) for x in components]
-        amount_part = [x[0] if x else "1" for x in amount_part]
-        species_part = [x.strip(amount) for x, amount in zip(components, amount_part)]
-        species_part = [x + "0" if not re.search(r"[0-9\+\-]+", x) else x for x in species_part]
-        amount_part = [float(x) for x in amount_part]
+    def _tracer(node):
+        if isinstance(node, ast.Num):
+            return node.n
+        if isinstance(node, ast.BinOp):
+            return operators[type(node.op)](_tracer(node.left), _tracer(node.right))
+        if isinstance(node, ast.UnaryOp):
+            return operators[type(node.op)](_tracer(node.operand))
+        raise TypeError("Invalid characters on math expression")
 
-        return Composition({Species.from_string(species): amount for species, amount in zip(species_part, amount_part)})
-
-    try:
-        return Composition(composition_string)
-    except (CompositionError, ValueError, IndexError):
-        # - CompositionError: get_sym_dict() error
-        #   when "+" oxidation is used.
-        # - ValueError: Wrong parse by get_sym_dict()
-        #   if the oxidation negative.
-        # - IndexError: Sometimes appear when the string gets more complex
-        return composition_builder()
-
-
-@property
-def site_symbols(self):
-    """
-    On Poscar: sometimes we would like to use a separate pseudopotential
-    for each oxidation states.
-
-    Write oxidation states, if, and only if, for the given element,
-    there are more than 1 state.
-    """
-    return [a[0] for a in itertools.groupby(self.syms)]
+    return _tracer(ast.parse(expr, mode="eval").body)
 
 
-@property
-def syms(self):
-    """
-    Replaced self.syms in some functions of Poscar
-    """
-    e_oxstates = collections.defaultdict(set)
-    s_symbols = collections.defaultdict(list)
-
-    for site in self.structure:
-        e_oxstates[site.specie.symbol].add(str(site.specie))
-    for e, oes in e_oxstates.items():
-        if len(oes) == 1:
-            s_symbols[list(oes)[0]] = e
-        else:
-            for oe in oes:
-                s_symbols[oe] = oe
-
-    return [s_symbols[str(site.specie)] for site in self.structure]
+def _normalize_sample(sample):
+    if isinstance(sample, str):
+        if sample == "all":
+            return None
+        return int(_math_eval(sample))
+    return sample
 
 
-@property
-def natoms(self):
-    """
-    Sequence of number of sites of each type associated with the Poscar.
-    Similar to 7th line in vasp 5+ POSCAR or the 6th line in vasp 4 POSCAR.
-    """
-    return [len(tuple(a[1])) for a in itertools.groupby(self.syms)]
-
-
-@staticmethod
-def parse_oxi_states(data):
-    """
-    Parse oxidation states from data dictionary
-    """
-    ox_state_regex = re.compile(r"\d?[\+,\-]?$")
-
-    try:
-        oxi_states = {
-            data["_atom_type_symbol"][i]: str2float(data["_atom_type_oxidation_number"][i])
-            for i in range(len(data["_atom_type_symbol"]))
+def _normalize_config(config: RunConfig) -> RunConfig:
+    sample = _normalize_sample(config.sample)
+    scaling_matrix = np.array(config.scaling_matrix)
+    write_ewald = config.write_ewald or config.max_ewald is not None
+    return RunConfig(
+        **{
+            **{k: getattr(config, k) for k in config.__dataclass_fields__},
+            "sample": sample,
+            "scaling_matrix": scaling_matrix,
+            "write_ewald": write_ewald,
         }
-        # attempt to strip oxidation state from _atom_type_symbol
-        # in case the label does not contain an oxidation state
-        for i, symbol in enumerate(data["_atom_type_symbol"]):
-            oxi_states[ox_state_regex.sub("", symbol)] = str2float(data["_atom_type_oxidation_number"][i])
-    except (ValueError, KeyError):
-        # Some CIF (including pymatgen's output) are like this.
-        try:
-            oxi_states = dict()
-            for i, symbol in enumerate(data["_atom_site_type_symbol"]):
-                _symbol = ox_state_regex.sub("", symbol)
-
-                parsed_oxi_state = ox_state_regex.search(symbol).group(0)
-                if not parsed_oxi_state:
-                    oxi_states[_symbol] = None
-                    continue
-
-                sign = re.search(r"[-+]", parsed_oxi_state)
-                if sign is None:
-                    sign = ""
-                else:
-                    sign = sign.group(0)
-                parsed_oxi_state = parsed_oxi_state.replace("+", "").replace("-", "")
-                parsed_oxi_state = str2float(sign + parsed_oxi_state)
-                oxi_states[ox_state_regex.sub("", symbol)] = parsed_oxi_state
-        except (ValueError, KeyError):
-            oxi_states = None
-    return oxi_states
+    )
 
 
-Composition.from_string = from_string
-Poscar.site_symbols = site_symbols
-Poscar.natoms = natoms
-Poscar.syms = syms
-CifParser.parse_oxi_states = parse_oxi_states
+def _validate_config(config: RunConfig) -> None:
+    if len(config.from_species) != len(config.to_species):
+        raise RuntimeError("from_species and to_species must have the same length.")
+
+
+def prepare_structures(config: RunConfig):
+    structure = LabeledStructure.from_file(
+        config.structure_file,
+        symmetrize=config.symmetrize,
+    )
+    modified_structure = structure.copy()
+    # Note: since we don't limit the allowable scaling_matrix,
+    # changing the order of enlargement vs. replace can have different meaning.
+    modified_structure.replace_species(dict(zip(config.from_species, config.to_species)))
+    modified_structure *= config.scaling_matrix
+    return structure, modified_structure
+
+
+def build_substitutor(config: RunConfig, modified_structure):
+    cache = False if config.no_cache else None
+    return Substitutor(
+        modified_structure,
+        symprec=config.symprec,
+        atol=config.atol,
+        angle_tolerance=config.angle_tolerance,
+        shuffle=config.sample is not None,
+        seed=config.seed,
+        no_dmat=config.no_dmat,
+        t_kind=config.t_kind,
+        cache=cache,
+    )
 
 
 class ScriptHelper:
@@ -189,68 +172,42 @@ class ScriptHelper:
         no_cache=False,
         t_kind=const.DEFAULT_T_KIND,
     ):
-        # TODO: Refactor with descriptors.
         self._timestamp = datetime.datetime.now().timestamp()
-        self.no_write = no_write
-        self.no_dmat = no_dmat
-        self.t_kind = t_kind
-        self.structure_file = structure_file
-        self._seed = seed
+        config = RunConfig(
+            structure_file=structure_file,
+            from_species=from_species,
+            to_species=to_species,
+            scaling_matrix=np.array(scaling_matrix),
+            symmetrize=symmetrize,
+            sample=sample,
+            seed=seed,
+            symprec=symprec,
+            atol=atol,
+            angle_tolerance=angle_tolerance,
+            dir_size=dir_size,
+            write_symm=write_symm,
+            write_ewald=write_ewald,
+            max_ewald=max_ewald,
+            no_write=no_write,
+            no_dmat=no_dmat,
+            t_kind=t_kind,
+            no_cache=no_cache,
+        )
+        config = _normalize_config(config)
+        _validate_config(config)
+        self.config = config
+        self._seed = config.seed
 
-        if len(from_species) != len(to_species):
-            raise RuntimeError("from_species and to_species must have the same length.")
-        self.from_species = from_species
-        self.to_species = to_species
-        self.scaling_matrix = np.array(scaling_matrix)
-        self.symmetrize = symmetrize
-
-        if isinstance(sample, str):
-            if sample == "all":
-                sample = None
-            else:
-                sample = int(self._math_eval(sample))
-        self.sample = sample
-        self.symprec = symprec
-        self.atol = atol
-        self.angle_tolerance = angle_tolerance
-        self.dir_size = dir_size
-        self.write_symm = write_symm
-        self.write_ewald = write_ewald
-        self.max_ewald = max_ewald
-        if self.max_ewald is not None:
-            self.write_ewald = True
+        for key in config.__dataclass_fields__:
+            setattr(self, key, getattr(config, key))
 
         logging.info("\nRun configurations:")
         logging.info(const.HLINE)
         logging.info(self)
         logging.info(const.HLINE)
 
-        # TODO: these "derivative attributes" should have a proper setter()
-        # In fact any that are not simple assignment should.
-        if no_cache:
-            cache = False
-        else:
-            cache = None
-        self.structure = LabeledStructure.from_file(
-            self.structure_file,
-            symmetrize=symmetrize,
-        )
-        self.modified_structure = self.structure.copy()
-        # Note: since we don't limit the allowable scaling_matrix,
-        # changing the order of enlargement vs. replace can have different meaning.
-        self.modified_structure.replace_species(dict(zip(self.from_species, self.to_species)))
-        self.modified_structure *= self.scaling_matrix
-        self.substitutor = Substitutor(
-            self.modified_structure,
-            symprec=self.symprec,
-            atol=self.atol,
-            angle_tolerance=self.angle_tolerance,
-            shuffle=self.sample is not None,
-            seed=seed,
-            no_dmat=self.no_dmat,
-            t_kind=self.t_kind,
-            cache=cache,
-        )
+        self.structure, self.modified_structure = prepare_structures(config)
+        self.substitutor = build_substitutor(config, self.modified_structure)
 
     def __str__(self):
         string = ""
@@ -268,87 +225,6 @@ class ScriptHelper:
         string += print_format.format("write_symm", self.write_symm)
         string += print_format.format("t-kind", self.t_kind)
         return string
-
-    @staticmethod
-    def _math_eval(expr):
-        """
-        Like eval() but limit to +-/*^** expressions for security
-        """
-        operators = {
-            ast.Add: operator.add,
-            ast.Sub: operator.sub,
-            ast.Mult: operator.mul,
-            ast.Div: operator.truediv,
-            ast.Pow: operator.pow,
-            ast.BitXor: operator.xor,
-            ast.USub: operator.neg,
-        }
-
-        def _tracer(node):
-            if isinstance(node, ast.Num):
-                return node.n
-            elif isinstance(node, ast.BinOp):
-                return operators[type(node.op)](_tracer(node.left), _tracer(node.right))
-            elif isinstance(node, ast.UnaryOp):
-                return operators[type(node.op)](_tracer(node.operand))
-            else:
-                raise TypeError("Invalid characters on math expression")
-
-        return _tracer(ast.parse(expr, mode="eval").body)
-
-    @classmethod
-    def from_file(cls, input_file):
-        """
-        Reads `*.ini` file containing command line arguments
-        """
-        # TODO: simplify
-        parser = configparser.ConfigParser(empty_lines_in_values=False, allow_no_value=False)
-        encoding = getattr(io, "LOCALE_ENCODING", "utf8")
-        with open(input_file, "r", encoding=encoding, errors="surrogateescape") as f:
-            parser.read_file(f)
-
-        structure_file = parser.get("DEFAULT", "structure_file")
-        from_species = parser.get("DEFAULT", "from_species", fallback=const.DEFAULT_FROM_SPECIES)
-        to_species = parser.get("DEFAULT", "to_species", fallback=const.DEFAULT_TO_SPECIES)
-        scaling_matrix = parser.get(
-            "DEFAULT",
-            "scaling_matrix",
-            fallback=const.DEFAULT_SCALING_MATRIX_STR,
-        )
-        # Allow ",", ";", and whiteline as separator (';' not allowed by *.ini)
-        from_species = const.FLEXIBLE_SEPARATOR.split(from_species)
-        to_species = const.FLEXIBLE_SEPARATOR.split(to_species)
-        scaling_matrix = [int(x) for x in const.FLEXIBLE_SEPARATOR.split(scaling_matrix)]
-        symmetrize = parser.getboolean("DEFAULT", "symmetrize", fallback=const.DEFAULT_SYMMETRIZE)
-        sample = parser.getint("DEFAULT", "sample", fallback=const.DEFAULT_SAMPLE)
-        symprec = parser.getfloat("DEFAULT", "symprec", fallback=const.DEFAULT_SYMPREC)
-        angle_tolerance = parser.getfloat(
-            "DEFAULT",
-            "angle_tolerance",
-            fallback=const.DEFAULT_ANGLE_TOLERANCE,
-        )
-        dir_size = parser.getint("DEFAULT", "dir_size", fallback=const.DEFAULT_DIR_SIZE)
-        write_symm = parser.getboolean("DEFAULT", "write_symm", fallback=const.DEFAULT_WRITE_SYMM)
-
-        no_write = parser.getboolean("DEFAULT", "no_write", fallback=const.DEFAULT_NO_WRITE)
-        no_dmat = parser.getboolean("DEFAULT", "no_dmat", fallback=const.DEFAULT_NO_DMAT)
-        t_kind = parser.getboolean("DEFAULT", "t_kind", fallback=const.DEFAULT_T_KIND)
-
-        return cls(
-            structure_file=structure_file,
-            from_species=from_species,
-            to_species=to_species,
-            scaling_matrix=scaling_matrix,
-            symmetrize=symmetrize,
-            sample=sample,
-            symprec=symprec,
-            angle_tolerance=angle_tolerance,
-            dir_size=dir_size,
-            write_symm=write_symm,
-            no_write=no_write,
-            no_dmat=no_dmat,
-            t_kind=t_kind,
-        )
 
     @property
     def _outdir(self):

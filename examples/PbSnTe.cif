@@ -227,6 +227,6 @@ _atom_site_fract_x
 _atom_site_fract_y
 _atom_site_fract_z
 _atom_site_occupancy
-Pb1 Pb2+ 4 a 0.0 0.0 0.0 0.75000
-Sn1 Sn2+ 4 a 0.0 0.0 0.0 0.25000
-Te1 Te2- 4 b 0.5 0.5 0.5 1.00000
+Pb1 Pb 4 a 0.0 0.0 0.0 0.75000
+Sn1 Sn 4 a 0.0 0.0 0.0 0.25000
+Te1 Te 4 b 0.5 0.5 0.5 1.00000
