@@ -25,20 +25,43 @@ except (ModuleNotFoundError, ImportError):
     shry_version = "unknown (not installed)"
 
 
-class TqdmLoggingHandler(logging.Handler):
+def setup_tqdm_logging(level=logging.INFO, fmt="%(message)s"):
     """
-    Prevent logging from overwriting tqdm
+    Configure logging to work with tqdm without overwriting the progress bar.
+    Returns a tuple needed to restore previous logging handlers.
     """
 
-    def emit(self, record):
-        try:
-            msg = self.format(record)
-            tqdm.tqdm.write(msg)
-            self.flush()
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:  # pylint: disable=bare-except
-            self.handleError(record)
+    class _TqdmLoggingHandler(logging.Handler):
+        def emit(self, record):
+            try:
+                msg = self.format(record)
+                tqdm.tqdm.write(msg)
+                self.flush()
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception:  # pylint: disable=bare-except
+                self.handleError(record)
+
+    handler = _TqdmLoggingHandler()
+    handler.setLevel(level)
+    handler.setFormatter(logging.Formatter(fmt))
+
+    root = logging.getLogger()
+    prev_handlers = list(root.handlers)
+    prev_level = root.level
+    root.handlers = []
+    root.setLevel(level)
+    root.addHandler(handler)
+    return root, prev_handlers, prev_level
+
+
+def restore_logging(state):
+    """
+    Restore logging handlers and level from setup_tqdm_logging.
+    """
+    root, prev_handlers, prev_level = state
+    root.handlers = prev_handlers
+    root.setLevel(prev_level)
 
 
 def print_header():
@@ -48,10 +71,6 @@ def print_header():
     tz = const.NOW.astimezone().tzname()
     time_string = const.NOW.strftime("%c ") + tz
 
-    # logger.setLevel(logging.INFO)
-    handler = TqdmLoggingHandler()
-    handler.setLevel(logging.INFO)
-    logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=[handler])
     logging.info("********************************\n")
     logging.info("SHRY: Suite for High-throughput generation of modelswith atomic substitutions implemented by Python")
     logging.info("")
@@ -70,9 +89,28 @@ def print_footer():
     tz = now.astimezone().tzname()
     time_string = now.strftime("%c ") + tz
     logging.info(const.HLINE)
+    logging.info("When you publish a paper, please cite the following paper!!")
+    logging.info(const.HLINE)
+    logging.info("SHRY: Application of Canonical Augmentation to the Atomic Substitution Problem")
+    logging.info("G.I. Prayogo*, A. Tirelli, K. Utimula, K. Hongo, R. Maezono, and K. Nakano*,")
+    logging.info("J. Chem. Inf. Model. 62, 2909-2915 (2022)")
+    logging.info("")
+    logging.info("@article{doi:10.1021/acs.jcim.2c00389,")
+    logging.info("  author = {Prayogo, Genki and Tirelli, Andrea and Utimula, Keishu and Hongo, Kenta and Maezono, Ryo and Nakano, Kousuke},")
+    logging.info("  title = {SHRY: Application of Canonical Augmentation to the Atomic Substitution Problem},")
+    logging.info("  journal = {J. Chem. Inf. Model.},")
+    logging.info("  volume = {62},")
+    logging.info("  number = {12},")
+    logging.info("  pages = {2909-2915},")
+    logging.info("  year = {2022},")
+    logging.info("  doi = {10.1021/acs.jcim.2c00389},")
+    logging.info("}")
+    logging.info("")
+    logging.info("If SHRY helps your work, please consider giving us a star on GitHub:")
+    logging.info("https://github.com/shry-project/SHRY")
+    logging.info(const.HLINE)
     logging.info("Ends " + time_string)
     logging.info(const.HLINE)
-
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -85,8 +123,7 @@ def get_parser():
         "input",
         type=str,
         help=(
-            "A CIF, or an `*.ini` containing command line options as keys.\n"
-            "If using `*.ini`, write all keys under `DEFAULT` section "
+            "A CIF containing command line options as keys.\n"
             "(See `$SHRY_INSTALLDIR/examples`)"
         ),
     )
@@ -237,20 +274,17 @@ def main():  # pylint: disable=missing-function-docstring
     parser = get_parser()
     args = parser.parse_args()
     const.DISABLE_PROGRESSBAR = args.disable_progressbar
+    logging_state = setup_tqdm_logging()
+    try:
+        # Print header first for faster perceived response
+        print_header()
 
-    # Print header first for faster perceived response
-    print_header()
+        # Late patch for count/mod/nowrite
+        if args.count_only:
+            args.no_write = True
 
-    # Late patch for count/mod/nowrite
-    if args.count_only:
-        args.no_write = True
+        from .main import ScriptHelper  # pylint:disable=import-outside-toplevel
 
-    from .main import ScriptHelper  # pylint:disable=import-outside-toplevel
-
-    if fnmatch.fnmatch(args.input, "*.ini"):
-        # Note: when using *.ini, other arguments will be ignored.
-        helper = ScriptHelper.from_file(args.input)
-    else:
         # Trick to allow ",", ";", and whiteline as separator
         from_species = const.FLEXIBLE_SEPARATOR.split(",".join(args.from_species))
         to_species = const.FLEXIBLE_SEPARATOR.split(",".join(args.to_species))
@@ -289,11 +323,13 @@ def main():  # pylint: disable=missing-function-docstring
             no_dmat=args.no_dmat,
             t_kind=args.t_kind,
         )
-    helper.count()
-    helper.save_modified_structure()
-    if not args.count_only and not args.mod_only:
-        helper.write()
-    print_footer()
+        helper.count()
+        helper.save_modified_structure()
+        if not args.count_only and not args.mod_only:
+            helper.write()
+        print_footer()
+    finally:
+        restore_logging(logging_state)
 
 
 if __name__ == "__main__":

@@ -31,6 +31,15 @@ SHRY_TOLERANCE = const.DEFAULT_SYMPREC
 SHRY_ANGLE_TOLERANCE = const.DEFAULT_ANGLE_TOLERANCE
 SHRY_ATOL = const.DEFAULT_ATOL
 
+pytestmark = [
+    pytest.mark.filterwarnings(
+        "ignore:No Pauling electronegativity for .*:UserWarning",
+    ),
+    pytest.mark.filterwarnings(
+        r"ignore:Set OLD_ERROR_HANDLING to false and catch the errors directly\.:DeprecationWarning",
+    )
+]
+
 # PatternMaker basic functions.
 
 
