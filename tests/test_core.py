@@ -6,7 +6,6 @@
 import glob
 import shutil
 import numpy as np
-import pandas as pd
 import pytest
 from sympy.tensor.indexed import IndexedBase
 
@@ -31,21 +30,11 @@ SHRY_TOLERANCE = const.DEFAULT_SYMPREC
 SHRY_ANGLE_TOLERANCE = const.DEFAULT_ANGLE_TOLERANCE
 SHRY_ATOL = const.DEFAULT_ATOL
 
-pytestmark = [
-    pytest.mark.filterwarnings(
-        "ignore:No Pauling electronegativity for .*:UserWarning",
-    ),
-    pytest.mark.filterwarnings(
-        r"ignore:Set OLD_ERROR_HANDLING to false and catch the errors directly\.:DeprecationWarning",
-    )
-]
 
 # PatternMaker basic functions.
-
-
 def test_perm_label():
-    """
-    Test rough canonization attempt on the permutations.
+    """Test rough canonization attempt on the permutations.
+
     This allows reuse of patterns on multiple color/orbit.
     """
     # Invariance with row swaps.
@@ -98,19 +87,17 @@ def test_perm_label():
         ]
     )
 
-    pgs = [
-        PatternMaker(x)
-        for x in (perm_a, perm_b, perm_c, perm_d, perm_e, perm_f)
-    ]
+    pgs = [PatternMaker(x) for x in (perm_a, perm_b, perm_c, perm_d, perm_e, perm_f)]
     assert all(pg.label == pgs[0].label for pg in pgs)
     assert all(
         pg.label == PatternMaker.get_label(x)
-        for pg, x in zip(pgs, (perm_a, perm_b, perm_c, perm_d, perm_e, perm_f))
+        for pg, x in zip(pgs, (perm_a, perm_b, perm_c, perm_d, perm_e, perm_f), strict=True)
     )
 
 
 @pytest.fixture
 def pm():
+    """Test PatternMaker."""
     perms = np.array(
         [
             [8, 9, "a", 11],
@@ -154,7 +141,7 @@ def test_bit_perm_rep(pm):
 
 
 def test_large_bit_perm_rep():
-    """When large, object type should change to object"""
+    """When large, object type should change to object."""
     # NOTE: not a proper group (incomplete), but this test
     # should not be affected by that.
     large_perm = np.array([list(range(64)), list(range(64))[::-1]])
@@ -163,6 +150,7 @@ def test_large_bit_perm_rep():
 
 
 def test_search(pm):
+    """Check search."""
     correct_answer = {
         0: [set()],
         1: [{"11"}, {"8"}],
@@ -210,10 +198,7 @@ def test_all(from_species, to_species):
 
 @chdir("../examples")
 def test_need_supercell():
-    """
-    Test whether program correctly exits if the structure
-    needs supercell
-    """
+    """Test whether program correctly exits if the structure needs supercell."""
     with pytest.raises(NeedSupercellError):
         ScriptHelper(
             structure_file="SmFe12.cif",
@@ -224,9 +209,7 @@ def test_need_supercell():
 
 @chdir("../examples")
 def test_non_cif():
-    """
-    Not-cif should raise ValueError
-    """
+    """Not-cif should raise ValueError."""
     with pytest.raises(ValueError) as excinfo:
         ScriptHelper(
             structure_file="example1.py",
@@ -238,8 +221,8 @@ def test_non_cif():
 
 @chdir("../examples")
 def test_sequential():
-    """
-    Test sequential use of Substitutor;
+    """Test sequential use of Substitutor.
+
     basically testing the setter of Substitutor.structure
     """
     structure = LabeledStructure.from_file("SmFe12.cif")
@@ -260,8 +243,8 @@ def test_sequential():
 
 @chdir("../examples")
 def test_sequential_scaling_diagonal_one_scalar_value():
-    """
-    Test sequential use of Substitutor;
+    """Test sequential use of Substitutor.
+
     basically testing the setter of Substitutor.structure
     """
     structure = LabeledStructure.from_file("SmFe12.cif")
@@ -280,8 +263,8 @@ def test_sequential_scaling_diagonal_one_scalar_value():
 
 @chdir("../examples")
 def test_sequential_scaling_diagonal_three_scalar_values():
-    """
-    Test sequential use of Substitutor;
+    """Test sequential use of Substitutor.
+
     basically testing the setter of Substitutor.structure
     """
     structure = LabeledStructure.from_file("SmFe12.cif")
@@ -302,9 +285,10 @@ def test_sequential_scaling_diagonal_three_scalar_values():
 
 @chdir("../examples")
 def test_sequential_scaling_diagonal_matrix():
-    """
-    Test sequential use of Substitutor;
+    """Test sequential use of Substitutor.
+
     basically testing the setter of Substitutor.structure
+
     """
     structure = LabeledStructure.from_file("SmFe12.cif")
     structure1 = structure.copy()
@@ -324,9 +308,10 @@ def test_sequential_scaling_diagonal_matrix():
 
 @chdir("../examples")
 def test_sequential_scaling_nondiagonal_matrix():
-    """
-    Test sequential use of Substitutor;
+    """Test sequential use of Substitutor.
+
     basically testing the setter of Substitutor.structure
+
     """
     structure = LabeledStructure.from_file("SmFe12.cif")
     structure1 = structure.copy()
@@ -357,7 +342,7 @@ def test_no_disorder():
 
 @chdir("../examples")
 def test_cifwriter():
-    # Test cifwriter implementation.
+    """Test cifwriter implementation."""
     sh = ScriptHelper("SmFe7Ti.cif")
     sh.write()
     cifs = glob.glob("shry-SmFe*/slice*/*.cif")
@@ -369,13 +354,8 @@ def test_cifwriter():
         return structure
 
     try:
-        esums = [
-            EwaldSummation(give_arbitrary_charge(x)).total_energy for x in cifs
-        ]
-        esums_ref = [
-            EwaldSummation(give_arbitrary_charge(x)).total_energy
-            for x in ref_cifs
-        ]
+        esums = [EwaldSummation(give_arbitrary_charge(x)).total_energy for x in cifs]
+        esums_ref = [EwaldSummation(give_arbitrary_charge(x)).total_energy for x in ref_cifs]
         assert len(set(esums)) == 16
         assert set(esums) == set(esums_ref)
     finally:
@@ -386,19 +366,11 @@ def test_cifwriter():
 
     sh = ScriptHelper("SmFeTi.cif", write_symm=True)
     sh.write()
-    structures = [
-        Structure.from_file(x) for x in glob.glob("shry-SmFe*/slice*/*.cif")
-    ]
-    ref_structures = [
-        Structure.from_file(x)
-        for x in glob.glob("../tests/test_cifs/smfe7ti_sym/slice*/*.cif")
-    ]
+    structures = [Structure.from_file(x) for x in glob.glob("shry-SmFe*/slice*/*.cif")]
+    ref_structures = [Structure.from_file(x) for x in glob.glob("../tests/test_cifs/smfe7ti_sym/slice*/*.cif")]
 
     try:
-        assert any(
-            any(x == structure for x in ref_structures)
-            for structure in structures
-        )
+        assert any(any(x == structure for x in ref_structures) for structure in structures)
     finally:
         # Cleanup
         shry_outdirs = glob.glob("shry-SmFe*")
@@ -450,9 +422,7 @@ def test_ewald():
 @pytest.mark.skip(reason="Feature dropped.")
 @chdir("../examples")
 def test_matheval():
-    """
-    Test ScriptHelper._math_eval() for various ScriptHelper.sample specification
-    """
+    """Test ScriptHelper._math_eval() for various ScriptHelper.sample specification."""
     sh = ScriptHelper("SmFe12.cif", sample="2/3*10000")
     assert sh.sample == 6666
 
@@ -492,39 +462,3 @@ def test_ci(polya):
 def test_count(polya):
     """Test counting of pattern. One should be enough representative."""
     assert polya.count(((3, 1), (2, 1))) == 5
-
-
-# @pytest.mark.skip(reason="Comprehensive but time consuming. It will be activated later.")
-@chdir("./test_cifs/all_space_groups")
-def test_benchmark():
-    """benchmark / the number of symmetry-inequivalent structures."""
-    df = pd.read_excel("./benchmark_SG_all.xls")
-    for row, zipped in enumerate(
-        zip(
-            df["Supercell"],
-            df["File"],
-            df["Substitutions"],
-            df["Equivalent Structures"],
-            df["Checked"],
-        )
-    ):
-        supercell, filename, substitution, equivalent, checked = zipped
-
-        # cif_basename = os.path.basename(filename).replace(".cif", "")
-        filename = filename.replace(".cif", "_partial.cif")
-        print(f"filename={filename}")
-        structure = LabeledStructure.from_file(filename)
-        supercell_size = list(map(int, supercell.split("x")))
-        print(supercell_size)
-        structure *= supercell_size
-        s = Substitutor(
-            structure,
-            symprec=SHRY_TOLERANCE,
-            angle_tolerance=SHRY_ANGLE_TOLERANCE,
-            atol=SHRY_ATOL
-        )
-        count_obtained = s.count()
-        count_ref = equivalent
-        print(f"count_obtained={count_obtained}")
-        print(f"count_ref={count_ref}")
-        assert count_obtained == count_ref

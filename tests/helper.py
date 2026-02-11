@@ -3,9 +3,7 @@
 
 """Some helper functions related to testing."""
 
-import glob
 import os
-import shutil
 from functools import wraps
 
 
@@ -34,16 +32,3 @@ def chdir(directory):
 def testing_dir(path="."):
     """Get relative directory from the current testing directory."""
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
-
-
-def pre_cleanup(function):
-    """Remove generated configurations from any previous runs."""
-
-    @wraps(function)
-    def wrapped(*args, **kwargs):
-        cwd = os.getcwd()
-        for structure_dir in glob.glob(os.path.join(cwd, "structures*")):
-            shutil.rmtree(structure_dir)
-        return function(*args, **kwargs)
-
-    return wrapped
