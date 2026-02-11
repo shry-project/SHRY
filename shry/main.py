@@ -22,16 +22,17 @@ from dataclasses import dataclass
 
 # python modules
 import numpy as np
+import spglib
 import tqdm
 from pymatgen.core import Composition, PeriodicSite, Structure
 from pymatgen.core.lattice import Lattice
 from pymatgen.io.cif import CifParser
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer, SpacegroupOperations
+from pymatgen.symmetry.analyzer import SpacegroupOperations
 from pymatgen.util.coord import in_coord_list_pbc, lattice_points_in_supercell
 
 # shry modules
 from . import const
-from .core import Substitutor
+from .core import Substitutor, get_symmetry_operations_from_spglib
 from .patches import apply_pymatgen_patches
 
 # shry version control
@@ -565,7 +566,7 @@ class LabeledStructure(Structure):
 
         # Find equivalent sites.
         if symmetrize:
-            symm_ops = SpacegroupAnalyzer(self, symprec, angle_tolerance).get_space_group_operations()
+            symm_ops = get_symmetry_operations_from_spglib(self, symprec, angle_tolerance)
         else:
             # A bit of trick.
             parser.data = cif_dict

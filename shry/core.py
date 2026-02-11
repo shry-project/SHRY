@@ -21,7 +21,7 @@ import tqdm
 from pymatgen.analysis.ewald import EwaldSummation
 from pymatgen.core.composition import Composition
 from pymatgen.io.cif import CifBlock, CifParser, CifWriter
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer, SpacegroupOperations
+from pymatgen.symmetry.analyzer import SpacegroupOperations
 from pymatgen.symmetry.structure import SymmetrizedStructure
 from pymatgen.util.coord import find_in_coord_list_pbc
 from pymatgen.util.string import transformation_to_string
@@ -47,6 +47,66 @@ np.set_printoptions(linewidth=1000, threshold=sys.maxsize)
 spglib.OLD_ERROR_HANDLING = False
 
 apply_pymatgen_patches()
+
+
+def structure_to_spglib_cell(structure):
+    """
+    Convert pymatgen Structure to spglib cell tuple.
+
+    Args:
+        structure: pymatgen Structure object
+
+    Returns:
+        tuple: (lattice, positions, numbers) for spglib
+    """
+    lattice = structure.lattice.matrix
+    positions = np.array([site.frac_coords for site in structure])
+
+    # Get atomic numbers
+    # For ordered sites, use Z directly
+    # For disordered sites, use the first element (will be handled during enumeration)
+    numbers = []
+    for site in structure:
+        if site.is_ordered:
+            numbers.append(site.specie.Z)
+        else:
+            # For disordered sites, use the first element
+            numbers.append(list(site.species.keys())[0].Z)
+    numbers = np.array(numbers, dtype=int)
+
+    return (lattice, positions, numbers)
+
+
+def get_symmetry_operations_from_spglib(structure, symprec=1e-5, angle_tolerance=-1.0):
+    """
+    Get symmetry operations from spglib.
+
+    Args:
+        structure: pymatgen Structure object
+        symprec: Symmetry precision
+        angle_tolerance: Angle tolerance
+
+    Returns:
+        list: List of SymmOp objects
+    """
+    from pymatgen.core.operations import SymmOp
+
+    cell = structure_to_spglib_cell(structure)
+    symmetry = spglib.get_symmetry(cell, symprec=symprec, angle_tolerance=angle_tolerance)
+
+    if symmetry is None:
+        raise RuntimeError("Couldn't find symmetry.")
+
+    # Convert spglib symmetry operations to pymatgen SymmOp objects
+    symmops = []
+    for rotation, translation in zip(symmetry["rotations"], symmetry["translations"]):
+        # Create affine transformation matrix
+        affine_matrix = np.eye(4)
+        affine_matrix[:3, :3] = rotation
+        affine_matrix[:3, 3] = translation
+        symmops.append(SymmOp(affine_matrix))
+
+    return symmops
 
 
 class PatchedSymmetrizedStructure(SymmetrizedStructure):
@@ -92,22 +152,35 @@ class PatchedSymmetrizedStructure(SymmetrizedStructure):
         return "\n".join(outs)
 
 
-class PatchedSpacegroupAnalyzer(SpacegroupAnalyzer):
+def get_symmetrized_structure_from_spglib(structure, symprec=1e-5, angle_tolerance=-1.0):
     """
-    Patched to use PatchedSymmetrizedStructure in get_symmetrized_structure()
-    """
+    Get symmetrized structure using spglib directly.
 
-    def get_symmetrized_structure(self):
-        """
-        Use PatchedSymmetrizedStructure
-        """
-        ds = self.get_symmetry_dataset()
-        sg = SpacegroupOperations(
-            self.get_space_group_symbol(),
-            self.get_space_group_number(),
-            self.get_symmetry_operations(),
-        )
-        return PatchedSymmetrizedStructure(self._structure, sg, ds.equivalent_atoms, ds.wyckoffs)
+    Args:
+        structure: pymatgen Structure object
+        symprec: Symmetry precision
+        angle_tolerance: Angle tolerance
+
+    Returns:
+        PatchedSymmetrizedStructure object
+    """
+    cell = structure_to_spglib_cell(structure)
+    dataset = spglib.get_symmetry_dataset(cell, symprec=symprec, angle_tolerance=angle_tolerance)
+
+    if dataset is None:
+        raise RuntimeError("Couldn't find symmetry.")
+
+    # Get symmetry operations
+    symmops = get_symmetry_operations_from_spglib(structure, symprec, angle_tolerance)
+
+    # Create SpacegroupOperations object
+    sg = SpacegroupOperations(
+        dataset.international,
+        dataset.number,
+        symmops,
+    )
+
+    return PatchedSymmetrizedStructure(structure, sg, dataset.equivalent_atoms, dataset.wyckoffs)
 
 
 class AltCifBlock(CifBlock):
@@ -418,20 +491,31 @@ class Substitutor:
         # Read.
         self._structure = structure.copy()
 
-        sga = PatchedSpacegroupAnalyzer(
-            self._structure,
-            symprec=self._symprec,
-            angle_tolerance=self._angle_tolerance,
-        )
+        # Get spglib cell and symmetry dataset
+        cell = structure_to_spglib_cell(self._structure)
+        dataset = spglib.get_symmetry_dataset(cell, symprec=self._symprec, angle_tolerance=self._angle_tolerance)
+
+        if dataset is None:
+            raise RuntimeError("Couldn't find symmetry.")
+
+        # Get symmetry operations
         try:
-            self._symmops = sga.get_symmetry_operations()
-        except TypeError as exc:
+            self._symmops = get_symmetry_operations_from_spglib(
+                self._structure, symprec=self._symprec, angle_tolerance=self._angle_tolerance
+            )
+        except Exception as exc:
             raise RuntimeError("Couldn't find symmetry.") from exc
 
-        logging.info(f"Space group: {sga.get_hall()} ({sga.get_space_group_number()})")
+        logging.info(f"Space group: {dataset.hall} ({dataset.number})")
         logging.info(f"Total {len(self._symmops)} symmetry operations")
-        logging.info(sga.get_symmetrized_structure())
-        equivalent_atoms = sga.get_symmetry_dataset().equivalent_atoms
+
+        # Get symmetrized structure for logging
+        symm_struct = get_symmetrized_structure_from_spglib(
+            self._structure, symprec=self._symprec, angle_tolerance=self._angle_tolerance
+        )
+        logging.info(symm_struct)
+
+        equivalent_atoms = dataset.equivalent_atoms
 
         # Identify and label disorder sites.
         # Index is used for later recoloring the sites.
@@ -1018,10 +1102,7 @@ class Substitutor:
             international = space_group_data.international
             number = space_group_data.number
 
-            ops = [
-                transformation_to_string(rot, trans, delim=", ")
-                for rot, trans in zip(rotations, translations)
-            ]
+            ops = [transformation_to_string(rot, trans, delim=", ") for rot, trans in zip(rotations, translations)]
             u, inv = np.unique(equivalent_atoms, return_inverse=True)
             equivalent_indices = [[] for _ in range(len(u))]
             for j, inv in enumerate(inv):

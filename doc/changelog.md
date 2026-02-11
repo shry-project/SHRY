@@ -18,6 +18,13 @@
 *   **Example 7**: Enumerates highest symmetry structures. Output filenames now include space group number and symbol.
 *   **Example 8**: New example demonstrating how to merge multiple Wyckoff labels into a shared label to enforce a global substitution concentration.
 
+### Internal Changes
+
+*   **Refactored symmetry detection**: Changed from pymatgen's internal `SpacegroupAnalyzer` to direct `spglib` calls for improved transparency and control over symmetry operations.
+    *   Added helper functions: `structure_to_spglib_cell()`, `get_symmetry_operations_from_spglib()`, and `get_symmetrized_structure_from_spglib()`
+    *   Removed dependency on `PatchedSpacegroupAnalyzer` class
+    *   Symmetry information is now obtained directly from spglib's dataset
+
 ### Dependency Updates
 
 *   Python version support updated to `>=3.10.0` (dropped support for 3.8 and 3.9).

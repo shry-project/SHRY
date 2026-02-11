@@ -46,11 +46,20 @@ from pymatgen.io.cif import CifFile, str2float
 from pymatgen.util.coord import find_in_coord_list_pbc
 
 from shry import LabeledStructure
-from shry.core import NeedSupercellError, Substitutor, PatchedSpacegroupAnalyzer
+from shry.core import NeedSupercellError, Substitutor, get_symmetry_operations_from_spglib
 
 import warnings
 
 warnings.simplefilter("ignore")
+
+pytestmark = [
+    pytest.mark.filterwarnings(
+        "ignore:No Pauling electronegativity for .*:UserWarning",
+    ),
+    pytest.mark.filterwarnings(
+        r"ignore:Set OLD_ERROR_HANDLING to false and catch the errors directly\.:DeprecationWarning",
+    ),
+]
 
 # TOLERANCE
 SHRY_TOLERANCE = 1.0e-2  # angstrom
@@ -411,12 +420,11 @@ def test_no_redundancy(test_case):
             cif_files.append(tmp_cif)
 
         # Get symmetry operations (supercell, pre-substitution)
-        sga = PatchedSpacegroupAnalyzer(
+        symmops = get_symmetry_operations_from_spglib(
             structure,
             symprec=SHRY_TOLERANCE,
             angle_tolerance=SHRY_ANGLE_TOLERANCE,
         )
-        symmops = sga.get_symmetry_operations()
 
         all_combinations = list(itertools.combinations(range(len(cif_files)), 2))
 
