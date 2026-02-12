@@ -13,10 +13,10 @@ import os
 from heapq import heappush, heapreplace
 
 from pymatgen.analysis.ewald import EwaldSummation
-from shry import ScriptHelper
+from shry import _ScriptHelper
 
 
-helper = ScriptHelper(
+helper = _ScriptHelper(
     structure_file="PbSnTe.cif",  # Replace with your CIF if desired
     from_species=("Sn",),
     to_species=("Sn0.5Se0.5",),

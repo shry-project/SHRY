@@ -16,12 +16,12 @@ from pymatgen.core import Structure
 # shry
 from shry.core import (
     NeedSupercellError,
-    PatternMaker,
-    Polya,
+    _PatternMaker,
+    _Polya,
     Substitutor,
     TooBigError,
 )
-from shry.main import LabeledStructure, ScriptHelper
+from shry.main import LabeledStructure, _ScriptHelper
 from shry import const
 from helper import chdir
 
@@ -87,10 +87,10 @@ def test_perm_label():
         ]
     )
 
-    pgs = [PatternMaker(x) for x in (perm_a, perm_b, perm_c, perm_d, perm_e, perm_f)]
+    pgs = [_PatternMaker(x) for x in (perm_a, perm_b, perm_c, perm_d, perm_e, perm_f)]
     assert all(pg.label == pgs[0].label for pg in pgs)
     assert all(
-        pg.label == PatternMaker.get_label(x)
+        pg.label == _PatternMaker.get_label(x)
         for pg, x in zip(pgs, (perm_a, perm_b, perm_c, perm_d, perm_e, perm_f), strict=True)
     )
 
@@ -105,7 +105,7 @@ def pm():
             ["a", 8, 9, 11],
         ]
     )
-    return PatternMaker(perms)
+    return _PatternMaker(perms)
 
 
 def test_perm_rep(pm):
@@ -145,7 +145,7 @@ def test_large_bit_perm_rep():
     # NOTE: not a proper group (incomplete), but this test
     # should not be affected by that.
     large_perm = np.array([list(range(64)), list(range(64))[::-1]])
-    bp = PatternMaker(large_perm)._bit_perm
+    bp = _PatternMaker(large_perm)._bit_perm
     assert bp.dtype == "object"
 
 
@@ -181,14 +181,14 @@ def test_all(from_species, to_species):
     """Integrated test with multi-color multi-orbit structure.."""
     if to_species == ("FeTiSnAu",):
         with pytest.raises(TooBigError):
-            sh = ScriptHelper(
+            sh = _ScriptHelper(
                 structure_file="SmFe12.cif",
                 from_species=from_species,
                 to_species=to_species,
             )
             assert len(list(sh.substitutor.make_patterns())) == sh.count()
     else:
-        sh = ScriptHelper(
+        sh = _ScriptHelper(
             structure_file="SmFe12.cif",
             from_species=from_species,
             to_species=to_species,
@@ -200,7 +200,7 @@ def test_all(from_species, to_species):
 def test_need_supercell():
     """Test whether program correctly exits if the structure needs supercell."""
     with pytest.raises(NeedSupercellError):
-        ScriptHelper(
+        _ScriptHelper(
             structure_file="SmFe12.cif",
             from_species=("Fe1",),
             to_species=("Fe12Ti1",),
@@ -211,7 +211,7 @@ def test_need_supercell():
 def test_non_cif():
     """Not-cif should raise ValueError."""
     with pytest.raises(ValueError) as excinfo:
-        ScriptHelper(
+        _ScriptHelper(
             structure_file="example1.py",
             from_species=("Fe1",),
             to_species=("Fe12Ti1",),
@@ -343,7 +343,7 @@ def test_no_disorder():
 @chdir("../examples")
 def test_cifwriter():
     """Test cifwriter implementation."""
-    sh = ScriptHelper("SmFe7Ti.cif")
+    sh = _ScriptHelper("SmFe7Ti.cif")
     sh.write()
     cifs = glob.glob("shry-SmFe*/slice*/*.cif")
     ref_cifs = glob.glob("../tests/test_cifs/smfe7ti/slice*/*.cif")
@@ -364,7 +364,7 @@ def test_cifwriter():
         for outdir in shry_outdirs:
             shutil.rmtree(outdir)
 
-    sh = ScriptHelper("SmFeTi.cif", write_symm=True)
+    sh = _ScriptHelper("SmFeTi.cif", write_symm=True)
     sh.write()
     structures = [Structure.from_file(x) for x in glob.glob("shry-SmFe*/slice*/*.cif")]
     ref_structures = [Structure.from_file(x) for x in glob.glob("../tests/test_cifs/smfe7ti_sym/slice*/*.cif")]
@@ -436,7 +436,7 @@ def polya():
         ]
     )
     perms_list = [perm_a, perm_b]
-    return Polya(perms_list)
+    return _Polya(perms_list)
 
 
 def test_ci(polya):

@@ -20,14 +20,14 @@ from pymatgen.core.periodic_table import get_el_sp
 from pymatgen.io.vasp.inputs import Poscar
 
 from . import const
-from .cif_io import str2float  # Use pycifrw-compatible version
+from .cif_io import _str2float  # Use pycifrw-compatible version
 
 _APPLIED = False
 
 # Patched extra functionalities and bug fixes on top of Pymatgen's classes.
 
 
-def get_integer_formula_and_factor(
+def _get_integer_formula_and_factor(
     self,
     max_denominator: int = int(1 / const.DEFAULT_ATOL),
     iupac_ordering: bool = False,
@@ -44,7 +44,7 @@ def get_integer_formula_and_factor(
     return formula, factor * g
 
 
-def to_int_dict(self):
+def _to_int_dict(self):
     """
     Returns:
         Dict with element symbol and integer amount
@@ -64,7 +64,7 @@ def to_int_dict(self):
 
 
 @property
-def inted_composition(self):
+def _inted_composition(self):
     """
     Return Composition instance with integer formula
     """
@@ -82,7 +82,7 @@ def inted_composition(self):
     return int_comp
 
 
-def formula_double_format_tol(afloat, ignore_ones=True, tol: float = const.DEFAULT_ATOL * 10):
+def _formula_double_format_tol(afloat, ignore_ones=True, tol: float = const.DEFAULT_ATOL * 10):
     """
     This function is used to make pretty formulas by formatting the amounts.
     Instead of Li1.0 Fe1.0 P1.0 O4.0, you get LiFePO4.
@@ -103,18 +103,18 @@ def formula_double_format_tol(afloat, ignore_ones=True, tol: float = const.DEFAU
 
 
 @property
-def formula(self) -> str:
+def _formula(self) -> str:
     """
     Returns a formula string, with elements sorted by electronegativity,
     e.g., Li4 Fe4 P4 O16.
     """
     sym_amt = self.get_el_amt_dict()
     syms = sorted(sym_amt, key=lambda sym: get_el_sp(sym).X)
-    formula = [f"{s}{formula_double_format_tol(sym_amt[s], False)}" for s in syms]
+    formula = [f"{s}{_formula_double_format_tol(sym_amt[s], False)}" for s in syms]
     return " ".join(formula)
 
 
-def from_string(composition_string) -> Composition:
+def _from_string(composition_string) -> Composition:
     """
     Workaround when working with strings including oxication states
     """
@@ -142,7 +142,7 @@ def from_string(composition_string) -> Composition:
 
 
 @property
-def site_symbols(self):
+def _site_symbols(self):
     """
     On Poscar: sometimes we would like to use a separate pseudopotential
     for each oxidation states.
@@ -154,7 +154,7 @@ def site_symbols(self):
 
 
 @property
-def syms(self):
+def _syms(self):
     """
     Replaced self.syms in some functions of Poscar
     """
@@ -174,7 +174,7 @@ def syms(self):
 
 
 @property
-def natoms(self):
+def _natoms(self):
     """
     Sequence of number of sites of each type associated with the Poscar.
     Similar to 7th line in vasp 5+ POSCAR or the 6th line in vasp 4 POSCAR.
@@ -183,7 +183,7 @@ def natoms(self):
 
 
 @staticmethod
-def parse_oxi_states(data):
+def _parse_oxi_states(data):
     """
     Parse oxidation states from data dictionary
     """
@@ -191,13 +191,13 @@ def parse_oxi_states(data):
 
     try:
         oxi_states = {
-            data["_atom_type_symbol"][i]: str2float(data["_atom_type_oxidation_number"][i])
+            data["_atom_type_symbol"][i]: _str2float(data["_atom_type_oxidation_number"][i])
             for i in range(len(data["_atom_type_symbol"]))
         }
         # attempt to strip oxidation state from _atom_type_symbol
         # in case the label does not contain an oxidation state
         for i, symbol in enumerate(data["_atom_type_symbol"]):
-            oxi_states[ox_state_regex.sub("", symbol)] = str2float(data["_atom_type_oxidation_number"][i])
+            oxi_states[ox_state_regex.sub("", symbol)] = _str2float(data["_atom_type_oxidation_number"][i])
     except (ValueError, KeyError):
         # Some CIF (including pymatgen's output) are like this.
         try:
@@ -216,14 +216,14 @@ def parse_oxi_states(data):
                 else:
                     sign = sign.group(0)
                 parsed_oxi_state = parsed_oxi_state.replace("+", "").replace("-", "")
-                parsed_oxi_state = str2float(sign + parsed_oxi_state)
+                parsed_oxi_state = _str2float(sign + parsed_oxi_state)
                 oxi_states[ox_state_regex.sub("", symbol)] = parsed_oxi_state
         except (ValueError, KeyError):
             oxi_states = None
     return oxi_states
 
 
-def apply_pymatgen_patches() -> None:
+def _apply_pymatgen_patches() -> None:
     """
     Apply runtime patches to pymatgen classes.
     """
@@ -231,14 +231,14 @@ def apply_pymatgen_patches() -> None:
     if _APPLIED:
         return
 
-    Composition.to_int_dict = to_int_dict
-    Composition.get_integer_formula_and_factor = get_integer_formula_and_factor
-    Composition.inted_composition = inted_composition
-    Composition.formula = formula
-    Composition.from_string = from_string
+    Composition.to_int_dict = _to_int_dict
+    Composition.get_integer_formula_and_factor = _get_integer_formula_and_factor
+    Composition.inted_composition = _inted_composition
+    Composition.formula = _formula
+    Composition.from_string = _from_string
 
-    Poscar.site_symbols = site_symbols
-    Poscar.natoms = natoms
-    Poscar.syms = syms
+    Poscar.site_symbols = _site_symbols
+    Poscar.natoms = _natoms
+    Poscar.syms = _syms
 
     _APPLIED = True

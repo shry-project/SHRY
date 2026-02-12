@@ -14,12 +14,12 @@ from heapq import heappush, heapreplace
 
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from shry import ScriptHelper
+from shry import _ScriptHelper
 
 
 cif_file = "PbSnTe.cif"  # Replace with your CIF if desired
 
-helper = ScriptHelper(
+helper = _ScriptHelper(
     structure_file=cif_file,
     from_species=("Sn",),
     to_species=("Sn0.25Sb0.75",),

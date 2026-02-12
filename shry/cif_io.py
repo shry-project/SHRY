@@ -6,6 +6,7 @@ CIF I/O using PyCifRW instead of pymatgen.io.cif
 Supports magnetic CIF files for future development.
 """
 
+import contextlib
 import io
 import re
 import warnings
@@ -17,6 +18,14 @@ from pymatgen.core import Element, Lattice, PeriodicSite, Species, Structure
 from pymatgen.core.composition import Composition
 from pymatgen.core.operations import SymmOp
 from pymatgen.util.coord import in_coord_list_pbc
+
+
+def _sanitize_block_name(name: str) -> str:
+    """Make a safe CIF data block name (letters/digits/underscore only)."""
+    s = re.sub(r"\s+", "", str(name))
+    s = re.sub(r"[^0-9A-Za-z_]", "_", s)
+    s = s.strip("_")
+    return s or "shry"
 
 
 def parse_cif_to_structure(
@@ -110,7 +119,14 @@ def _parse_cif_block_to_structure(
 
     # Get symmetry operations
     cif_dict = {k: block.get(k) for k in block.keys()}
-    symops = get_symops_from_cif(cif_dict)
+    # For magCIF, coordinate generation should use the magnetic symmetry operations
+    # (time reversal does not affect coordinates). Keep the parsing logic separate:
+    # - non-magnetic CIF: get_symops_from_cif
+    # - magCIF (MSG): get_magnetic_symops_from_cif
+    if "_space_group_symop_magn_operation.xyz" in cif_dict or "_space_group_symop_magn_operation_xyz" in cif_dict:
+        symops = [op for op, _tr in _get_magnetic_symops_from_cif(cif_dict)]
+    else:
+        symops = _get_symops_from_cif(cif_dict)
 
     # Parse atomic sites (asymmetric unit)
     asym_sites = []
@@ -204,7 +220,7 @@ def _parse_cif_block_to_structure(
     return structure
 
 
-def get_cif_dict(cif_path: str) -> dict:
+def _get_cif_dict(cif_path: str) -> dict:
     """
     Get CIF data as dictionary (similar to pymatgen CifParser.as_dict()).
 
@@ -232,7 +248,7 @@ def get_cif_dict(cif_path: str) -> dict:
     return result
 
 
-def get_cif_block(cif_path: str, block_index: int = 0):
+def _get_cif_block(cif_path: str, block_index: int = 0):
     """
     Get a specific CIF block from file.
 
@@ -250,10 +266,15 @@ def get_cif_block(cif_path: str, block_index: int = 0):
     return cf[block_names[block_index]]
 
 
-def get_symops_from_cif(cif_dict: dict) -> List[SymmOp]:
+def _get_symops_from_cif(cif_dict: dict) -> List[SymmOp]:
     """
     Extract symmetry operations from CIF dictionary.
     Compatible with pymatgen CifParser.get_symops() behavior.
+
+    Note:
+        This function intentionally handles *non-magnetic* CIF symmetry operations.
+        For magCIF (MSG) operations (including time reversal), use
+        :func:`get_magnetic_symops_from_cif`.
 
     Args:
         cif_dict: Dictionary from get_cif_dict() for a specific block
@@ -263,38 +284,136 @@ def get_symops_from_cif(cif_dict: dict) -> List[SymmOp]:
     """
     symops = []
 
-    # Try to get symmetry operations from CIF
-    # Look for _symmetry_equiv_pos_as_xyz or _space_group_symop_operation_xyz
-    symm_key = None
-    for key in ["_symmetry_equiv_pos_as_xyz", "_space_group_symop_operation_xyz"]:
+    def _as_list(v):
+        if isinstance(v, (list, tuple)):
+            return list(v)
+        return [v]
+
+    def _clean_xyz(xyz: str) -> str:
+        """Clean CIF symop strings."""
+        return str(xyz).strip().replace("'", "").replace('"', "")
+
+    # Try to get symmetry operations from CIF (non-magnetic).
+    # Standard CIF tags:
+    #   - _symmetry_equiv_pos_as_xyz
+    #   - _space_group_symop_operation_xyz (and some variants)
+    ops_key = None
+    for key in [
+        "_symmetry_equiv_pos_as_xyz",
+        "_space_group_symop_operation_xyz",
+        "_space_group_symop_operation.xyz",
+    ]:
         if key in cif_dict:
-            symm_key = key
+            ops_key = key
             break
 
-    if symm_key is None:
-        # No symmetry operations found, return identity
+    if ops_key is None:
         return [SymmOp.from_xyz_str("x,y,z")]
 
-    symm_strs = cif_dict[symm_key]
-    if not isinstance(symm_strs, list):
-        symm_strs = [symm_strs]
-
-    for s in symm_strs:
-        # Clean up the string
-        s = s.strip().replace("'", "").replace('"', "")
+    ops = []
+    for s in _as_list(cif_dict[ops_key]):
+        s = _clean_xyz(s)
         try:
-            symops.append(SymmOp.from_xyz_str(s))
+            ops.append(SymmOp.from_xyz_str(s))
         except Exception as e:
             warnings.warn(f"Could not parse symmetry operation: {s}, error: {e}")
 
+    symops.extend(ops)
+
     if not symops:
-        # If parsing failed, return identity
         return [SymmOp.from_xyz_str("x,y,z")]
 
     return symops
 
 
-def structure_to_cif_string(structure: Structure, symprec: Optional[float] = None) -> str:
+def _get_magnetic_symops_from_cif(cif_dict: dict) -> list[tuple[SymmOp, int]]:
+    """Extract magnetic symmetry operations (including time reversal) from a magCIF dict.
+
+    magCIF operations may include a trailing time-reversal term, e.g. "x,y,z,+1".
+    Returns a list of (SymmOp, time_reversal) pairs, where time_reversal is +1 or -1.
+
+    Centering operations (if present) are composed similarly, with time reversal multiplied.
+    """
+
+    def _as_list(v):
+        if isinstance(v, (list, tuple)):
+            return list(v)
+        return [v]
+
+    def _parse_op_and_tr(xyz: str) -> tuple[SymmOp, int] | None:
+        s = str(xyz).strip().replace("'", "").replace('"', "")
+        parts = [p.strip() for p in s.split(",") if p.strip()]
+        if len(parts) < 3:
+            return None
+        tr = 1
+        if len(parts) >= 4:
+            try:
+                tr = int(str(parts[3]).replace("+", ""))
+                tr = 1 if tr >= 0 else -1
+            except Exception:
+                tr = 1
+        try:
+            op = SymmOp.from_xyz_str(",".join(parts[:3]))
+        except Exception:
+            return None
+        return op, tr
+
+    ops_key = None
+    for key in [
+        "_space_group_symop_magn_operation.xyz",
+        "_space_group_symop_magn_operation_xyz",
+    ]:
+        if key in cif_dict:
+            ops_key = key
+            break
+
+    if ops_key is None:
+        # Fallback to non-magnetic symops (time reversal +1)
+        return [(op, 1) for op in _get_symops_from_cif(cif_dict)]
+
+    ops: list[tuple[SymmOp, int]] = []
+    for raw in _as_list(cif_dict[ops_key]):
+        parsed = _parse_op_and_tr(raw)
+        if parsed is not None:
+            ops.append(parsed)
+
+    centers_key = None
+    for key in [
+        "_space_group_symop_magn_centering.xyz",
+        "_space_group_symop_magn_centering_xyz",
+    ]:
+        if key in cif_dict:
+            centers_key = key
+            break
+
+    if centers_key is None:
+        return ops or [(SymmOp.from_xyz_str("x,y,z"), 1)]
+
+    centers: list[tuple[SymmOp, int]] = []
+    for raw in _as_list(cif_dict[centers_key]):
+        parsed = _parse_op_and_tr(raw)
+        if parsed is not None:
+            centers.append(parsed)
+
+    if not centers:
+        return ops or [(SymmOp.from_xyz_str("x,y,z"), 1)]
+
+    composed: list[tuple[SymmOp, int]] = []
+    seen: set[tuple] = set()
+    for op, tr_op in ops or [(SymmOp.from_xyz_str("x,y,z"), 1)]:
+        for cen, tr_cen in centers:
+            c = op * cen
+            tr = int(tr_op) * int(tr_cen)
+            tr = 1 if tr >= 0 else -1
+            key = (tuple(np.round(c.affine_matrix, decimals=12).flatten()), tr)
+            if key in seen:
+                continue
+            seen.add(key)
+            composed.append((c, tr))
+    return composed
+
+
+def _structure_to_cif_string(structure: Structure, symprec: Optional[float] = None) -> str:
     """
     Convert pymatgen Structure to CIF string using PyCifRW.
 
@@ -305,61 +424,225 @@ def structure_to_cif_string(structure: Structure, symprec: Optional[float] = Non
     Returns:
         CIF file content as string
     """
-    cf = PyCifFile()
+    # NOTE: We write CIF manually (classic loop_ form) to avoid PyCifRW emitting
+    # CIF2 list syntax like "_atom_site_label [ ... ]" which some tools (e.g. VESTA)
+    # cannot parse reliably.
 
-    # Create data block
-    block_name = structure.formula.replace(" ", "")
-    cf.NewBlock(block_name)
-    block = cf[block_name]
+    del symprec  # reserved for future
 
-    # Add lattice parameters
-    lattice = structure.lattice
-    block["_cell_length_a"] = f"{lattice.a:.6f}"
-    block["_cell_length_b"] = f"{lattice.b:.6f}"
-    block["_cell_length_c"] = f"{lattice.c:.6f}"
-    block["_cell_angle_alpha"] = f"{lattice.alpha:.6f}"
-    block["_cell_angle_beta"] = f"{lattice.beta:.6f}"
-    block["_cell_angle_gamma"] = f"{lattice.gamma:.6f}"
+    block_name = _sanitize_block_name(structure.formula)
 
-    # Add symmetry info (P1 for now)
-    block["_symmetry_space_group_name_H-M"] = "P 1"
-    block["_symmetry_Int_Tables_number"] = "1"
+    def _label_to_symbol(lbl: str) -> str:
+        m = re.match(r"([A-Za-z]+)", str(lbl).strip())
+        return m.group(1) if m else str(lbl).strip()
 
-    # Add atomic sites
-    labels = []
-    type_symbols = []
-    fract_xs = []
-    fract_ys = []
-    fract_zs = []
-    occupancies = []
+    rows: list[tuple[str, str, float, float, float, float]] = []
+    element_count: dict[str, int] = {}
 
-    element_count = {}
+    def _next_label(sym: str) -> str:
+        """Generate CIF label as <symbol><index>, e.g. Cu1, Cu2, ..."""
+        sym = str(sym).strip() or "X"
+        element_count[sym] = element_count.get(sym, 0) + 1
+        return f"{sym}{element_count[sym]}"
+
     for site in structure.sites:
-        # Generate unique label
-        species_string = site.species_string
-        if species_string not in element_count:
-            element_count[species_string] = 0
-        element_count[species_string] += 1
-        label = f"{species_string}{element_count[species_string]}"
+        occ_map = site.properties.get("_atom_site_occupancy_by_label") or {}
+        label_prop = site.properties.get("_atom_site_label")
+        if isinstance(label_prop, str):
+            site_labels = [label_prop]
+        elif isinstance(label_prop, (list, tuple)):
+            site_labels = [x for x in label_prop if isinstance(x, str)]
+        else:
+            site_labels = []
 
-        labels.append(label)
-        type_symbols.append(species_string)
-        fract_xs.append(f"{site.frac_coords[0]:.6f}")
-        fract_ys.append(f"{site.frac_coords[1]:.6f}")
-        fract_zs.append(f"{site.frac_coords[2]:.6f}")
+        x, y, z = (float(site.frac_coords[0]), float(site.frac_coords[1]), float(site.frac_coords[2]))
 
-        occ = site.properties.get("occupancy", 1.0)
-        occupancies.append(f"{occ:.4f}")
+        # Expand by per-label occupancy when available.
+        if occ_map and len(occ_map) > 1:
+            for lbl in site_labels or list(occ_map.keys()):
+                occ = float(occ_map.get(lbl, 0.0))
+                if occ <= 0.0:
+                    continue
+                sym = _label_to_symbol(lbl)
+                rows.append((_next_label(sym), sym, x, y, z, occ))
+            continue
 
-    # Assign loop data directly (PyCifRW automatically creates loops from list values)
-    block["_atom_site_label"] = labels
-    block["_atom_site_type_symbol"] = type_symbols
-    block["_atom_site_fract_x"] = fract_xs
-    block["_atom_site_fract_y"] = fract_ys
-    block["_atom_site_fract_z"] = fract_zs
-    block["_atom_site_occupancy"] = occupancies
+        # Otherwise expand by pymatgen's species for disordered sites.
+        if not site.is_ordered:
+            try:
+                items = list(site.species.items())
+            except Exception:
+                items = []
+            if items:
+                for sp, occ in items:
+                    occ_f = float(occ)
+                    if occ_f <= 0.0:
+                        continue
+                    sym = getattr(sp, "symbol", str(sp))
+                    rows.append((_next_label(sym), sym, x, y, z, occ_f))
+                continue
 
-    return str(cf)
+        # Ordered site.
+        sym = site.specie.symbol if hasattr(site, "specie") else site.species_string
+        occ = float(site.properties.get("occupancy", 1.0))
+        rows.append((_next_label(sym), sym, x, y, z, occ))
+
+    lines: list[str] = []
+    lines.append(f"data_{block_name}")
+    lat = structure.lattice
+    lines.append(f"_cell_length_a    {lat.a:.6f}")
+    lines.append(f"_cell_length_b    {lat.b:.6f}")
+    lines.append(f"_cell_length_c    {lat.c:.6f}")
+    lines.append(f"_cell_angle_alpha {lat.alpha:.6f}")
+    lines.append(f"_cell_angle_beta  {lat.beta:.6f}")
+    lines.append(f"_cell_angle_gamma {lat.gamma:.6f}")
+    lines.append("_symmetry_space_group_name_H-M 'P 1'")
+    lines.append("_symmetry_Int_Tables_number 1")
+    lines.append("loop_")
+    lines.append("  _symmetry_equiv_pos_as_xyz")
+    lines.append("  'x,y,z'")
+    lines.append("loop_")
+    lines.append("  _atom_site_label")
+    lines.append("  _atom_site_type_symbol")
+    lines.append("  _atom_site_fract_x")
+    lines.append("  _atom_site_fract_y")
+    lines.append("  _atom_site_fract_z")
+    lines.append("  _atom_site_occupancy")
+    for lbl, sym, x, y, z, occ in rows:
+        lines.append(f"  {lbl} {sym} {x:.6f} {y:.6f} {z:.6f} {occ:.6f}")
+    return "\n".join(lines) + "\n"
+
+
+def _structure_to_mcif_string(structure: Structure, symprec: Optional[float] = None) -> str:
+    """Convert a (possibly magnetic) pymatgen Structure to a minimal magCIF string.
+
+    - Preserves magnetic moments when present via a magCIF loop:
+      _atom_site_moment.label + crystalaxis components.
+    - For disordered/mixed sites, emits one _atom_site_ row per label using
+      site.properties['_atom_site_occupancy_by_label'] when available.
+
+    Notes:
+        This writer intentionally outputs P1 symmetry for simplicity. SHRY's
+        enumeration and symmetry handling is performed via spglib; the output
+        here focuses on retaining magnetic moment data.
+    """
+
+    # Manual magCIF writer using classic loop_ sections.
+    del symprec  # reserved for future
+
+    block_name = _sanitize_block_name(structure.formula)
+
+    def _label_to_symbol(lbl: str) -> str:
+        m = re.match(r"([A-Za-z]+)", str(lbl).strip())
+        return m.group(1) if m else str(lbl).strip()
+
+    site_rows: list[tuple[str, str, float, float, float, float]] = []
+    moment_rows: list[tuple[str, float, float, float]] = []
+    element_count: dict[str, int] = {}
+
+    def _next_label(sym: str) -> str:
+        """Generate magCIF label as <symbol><index>, e.g. Cu1, Cu2, ..."""
+        sym = str(sym).strip() or "X"
+        element_count[sym] = element_count.get(sym, 0) + 1
+        return f"{sym}{element_count[sym]}"
+
+    for site in structure.sites:
+        occ_map = site.properties.get("_atom_site_occupancy_by_label") or {}
+        label_prop = site.properties.get("_atom_site_label")
+        if isinstance(label_prop, str):
+            site_labels = [label_prop]
+        elif isinstance(label_prop, (list, tuple)):
+            site_labels = [x for x in label_prop if isinstance(x, str)]
+        else:
+            site_labels = []
+
+        mom_map = site.properties.get("_atom_site_moment_by_label") or {}
+        x, y, z = (float(site.frac_coords[0]), float(site.frac_coords[1]), float(site.frac_coords[2]))
+
+        # Expand by per-label occupancy (preferred).
+        if occ_map and len(occ_map) > 1:
+            for lbl in site_labels or list(occ_map.keys()):
+                occ = float(occ_map.get(lbl, 0.0))
+                if occ <= 0.0:
+                    continue
+                sym = _label_to_symbol(lbl)
+                out_lbl = _next_label(sym)
+                site_rows.append((out_lbl, sym, x, y, z, occ))
+                vec = mom_map.get(lbl)
+                if vec is not None:
+                    v = np.array(vec, dtype=float)
+                    if v.shape == (3,) and not np.allclose(v, 0.0):
+                        moment_rows.append((out_lbl, float(v[0]), float(v[1]), float(v[2])))
+            continue
+
+        # Otherwise expand by species if disordered.
+        if not site.is_ordered:
+            try:
+                items = list(site.species.items())
+            except Exception:
+                items = []
+            if items:
+                for sp, occ in items:
+                    occ_f = float(occ)
+                    if occ_f <= 0.0:
+                        continue
+                    sym = getattr(sp, "symbol", str(sp))
+                    lbl = _next_label(sym)
+                    site_rows.append((lbl, sym, x, y, z, occ_f))
+                continue
+
+        # Ordered.
+        sym = site.specie.symbol if hasattr(site, "specie") else site.species_string
+        base_lbl = site_labels[0] if len(site_labels) == 1 else sym
+        lbl = _next_label(sym)
+        occ = float(site.properties.get("occupancy", 1.0))
+        site_rows.append((str(lbl), sym, x, y, z, occ))
+
+        vec = mom_map.get(base_lbl)
+        if vec is None:
+            vec = site.properties.get("magmom")
+        if vec is not None:
+            v = np.array(vec, dtype=float)
+            if v.shape == ():
+                v = np.array([float(v), 0.0, 0.0], dtype=float)
+            if v.shape == (3,) and not np.allclose(v, 0.0):
+                moment_rows.append((str(lbl), float(v[0]), float(v[1]), float(v[2])))
+
+    lines: list[str] = []
+    # VESTA supports CIF1.1 and magCIF 1.0 (CIF1.1-based). Avoid CIF2.0 headers.
+    lines.append(f"data_{block_name}")
+    lat = structure.lattice
+    lines.append(f"_cell_length_a    {lat.a:.6f}")
+    lines.append(f"_cell_length_b    {lat.b:.6f}")
+    lines.append(f"_cell_length_c    {lat.c:.6f}")
+    lines.append(f"_cell_angle_alpha {lat.alpha:.6f}")
+    lines.append(f"_cell_angle_beta  {lat.beta:.6f}")
+    lines.append(f"_cell_angle_gamma {lat.gamma:.6f}")
+    lines.append("_symmetry_space_group_name_H-M 'P 1'")
+    lines.append("_symmetry_Int_Tables_number 1")
+    lines.append("loop_")
+    lines.append("  _symmetry_equiv_pos_as_xyz")
+    lines.append("  'x,y,z'")
+    lines.append("loop_")
+    lines.append("  _atom_site_label")
+    lines.append("  _atom_site_type_symbol")
+    lines.append("  _atom_site_fract_x")
+    lines.append("  _atom_site_fract_y")
+    lines.append("  _atom_site_fract_z")
+    lines.append("  _atom_site_occupancy")
+    for lbl, sym, x, y, z, occ in site_rows:
+        lines.append(f"  {lbl} {sym} {x:.6f} {y:.6f} {z:.6f} {occ:.6f}")
+
+    if moment_rows:
+        lines.append("loop_")
+        lines.append("  _atom_site_moment.label")
+        lines.append("  _atom_site_moment.crystalaxis_x")
+        lines.append("  _atom_site_moment.crystalaxis_y")
+        lines.append("  _atom_site_moment.crystalaxis_z")
+        for lbl, mx, my, mz in moment_rows:
+            lines.append(f"  {lbl} {mx:.6f} {my:.6f} {mz:.6f}")
+
+    return "\n".join(lines) + "\n"
 
 
 def _get_cif_value(block, key: str) -> float:
@@ -392,10 +675,38 @@ def _parse_cif_float(value) -> float:
     value_str = str(value).strip()
     value_str = re.sub(r"\([0-9]+\)", "", value_str)
 
+    # Common CIF missing values
+    if value_str in {"?", ".", ""}:
+        return 0.0
+
+    # Fractions occasionally appear (e.g. symmetry-related values), handle "3/4".
+    if "/" in value_str:
+        parts = value_str.split("/")
+        if len(parts) == 2:
+            try:
+                num = float(parts[0])
+                den = float(parts[1])
+                if den != 0:
+                    return num / den
+            except ValueError:
+                pass
+
+    # Try direct float first.
     try:
         return float(value_str)
     except ValueError:
-        return 0.0
+        pass
+
+    # Bilbao magCIF sometimes uses tokens like "-0.5." (note the extra trailing dot).
+    # More generally, extract the leading numeric token and parse that.
+    m = re.match(r"^[+-]?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][+-]?\d+)?", value_str)
+    if m:
+        try:
+            return float(m.group(0))
+        except ValueError:
+            return 0.0
+
+    return 0.0
 
 
 def _get_oxidation_states(block) -> Optional[Dict[str, float]]:
@@ -411,7 +722,7 @@ def _get_oxidation_states(block) -> Optional[Dict[str, float]]:
     oxi_states = {}
     for symbol, oxi in zip(type_symbols, oxi_numbers, strict=False):
         try:
-            oxi_states[str(symbol).strip()] = str2float(oxi)
+            oxi_states[str(symbol).strip()] = _str2float(oxi)
         except Exception:
             continue
     return oxi_states or None
@@ -447,7 +758,7 @@ def _parse_species(symbol: str, oxi_states: Optional[Dict[str, float]] = None):
     return None
 
 
-def str2float(text):
+def _str2float(text):
     """
     Remove uncertainty brackets from strings and return float.
     Compatible with pymatgen's str2float function.

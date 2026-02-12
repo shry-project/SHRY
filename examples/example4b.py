@@ -4,6 +4,7 @@
 """
 Load saved Substitutor instance for further substitution.
 """
+
 import pickle
 import os
 
@@ -22,7 +23,7 @@ substitutor = Substitutor(structure, cache=True)
 # Load pattern from previous Substitutor
 with open("pg.pkl", "rb") as f:
     pattern_makers = pickle.load(f)
-substitutor.pattern_makers = pattern_makers
+substitutor._pattern_makers = pattern_makers
 
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
@@ -44,4 +45,4 @@ for i, packet in enumerate(substitutor.quantities(("cifwriter", "weight"))):
 
 # Update the previous pattern makers.
 with open("pg.pkl", "wb") as f:
-    pickle.dump(substitutor.pattern_makers, f)
+    pickle.dump(substitutor._pattern_makers, f)
