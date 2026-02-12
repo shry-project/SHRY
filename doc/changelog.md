@@ -8,20 +8,20 @@
 
 ### Internal Changes
 
+*   **CIF reader backend update**: Replaced CIF read path from `pymatgen.io.cif` to `PyCifRW` (`CifFile`) for CIF parsing.
+
 *   **Refactored symmetry detection**: Changed from pymatgen's internal `SpacegroupAnalyzer` to direct `spglib` calls for improved transparency and control over symmetry operations.
     *   Added helper functions: `structure_to_spglib_cell()`, `get_symmetry_operations_from_spglib()`, and `get_symmetrized_structure_from_spglib()`
     *   Removed dependency on `PatchedSpacegroupAnalyzer` class
     *   Symmetry information is now obtained directly from spglib's dataset
 
-*   **Parallel tree search**: Tree search algorithm now supports parallel execution using joblib.
-    *   Added `n_jobs` parameter to `Substitutor` and `PatternMaker` classes (default: -1, uses all CPU cores)
-    *   Parallelization occurs at the initial subtree level for both `_invarless_search` and `_invar_search` methods
-    *   **Adaptive depth expansion**: Automatically expands search tree to depth 2 or 3 when initial depth yields too few subtrees for effective parallelization (target: 2x CPU cores)
-    *   **Two-stage progress bars**: Shows subtree processing progress during parallel execution, then pattern generation progress
-    *   Parallel execution is automatically used when multiple subtrees are available
-    *   Logging shows split count and core usage: "Parallel search: {n_splits} subtrees across {n_cores} cores"
-    *   Expansion logging: "Expanding to depth {depth} (currently {n} subtrees, target: {target})"
-    *   Dependencies: `joblib` for parallel execution (with generator support), `multiprocessing` for CPU counting
+*   **Parallel tree search**: Tree search now supports dynamic parallel execution using Python `multiprocessing`.
+    *   Added `n_jobs` parameter to `Substitutor` and `PatternMaker` classes (default: `-1`, uses all CPU cores)
+    *   Parallelization is applied at subtree level for both `_invarless_search` and `_invar_search`
+    *   **Adaptive depth expansion**: subtree seeds are expanded until enough splits are prepared (`target = max(n_cores * 8, 32)`) or depth limit is reached (`max_depth <= 10`, and bounded by `stop`)
+    *   **Dynamic load balancing**: worker tasks are scheduled with `multiprocessing.Pool(...).imap_unordered(..., chunksize=1)`
+    *   **Progress reporting**: parallel mode reports subtree processing progress (`Processing subtrees`), while sequential mode reports pattern generation progress (`Making patterns`)
+    *   Logging includes expansion and mode details, e.g. `Expanding to depth ...` and `Parallel search (dynamic): ...`
 
 
 ## v1.2.0a1
