@@ -12,6 +12,7 @@ import io
 import itertools
 import logging
 import math
+import multiprocessing
 import operator
 import os
 import shutil
@@ -22,16 +23,17 @@ from dataclasses import dataclass
 
 # python modules
 import numpy as np
+import spglib
 import tqdm
 from pymatgen.core import Composition, PeriodicSite, Structure
 from pymatgen.core.lattice import Lattice
-from pymatgen.io.cif import CifParser
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer, SpacegroupOperations
+from pymatgen.symmetry.analyzer import SpacegroupOperations
 from pymatgen.util.coord import in_coord_list_pbc, lattice_points_in_supercell
 
 # shry modules
 from . import const
-from .core import Substitutor
+from .cif_io import get_cif_block, get_cif_dict, get_symops_from_cif, parse_cif_to_structure
+from .core import Substitutor, get_symmetry_operations_from_spglib
 from .patches import apply_pymatgen_patches
 
 # shry version control
@@ -41,6 +43,65 @@ except (ModuleNotFoundError, ImportError):
     shry_version = "unknown (not installed)"
 
 apply_pymatgen_patches()
+
+
+def _chunk_generator(gen, chunk_size):
+    """
+    Yield chunks from a generator without loading all items into memory.
+
+    Args:
+        gen: Generator to chunk
+        chunk_size: Number of items per chunk
+
+    Yields:
+        Lists of items from the generator
+    """
+    chunk = []
+    for item in gen:
+        chunk.append(item)
+        if len(chunk) >= chunk_size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
+
+
+def _consume_patterns_chunk(patterns_chunk):
+    """
+    Worker function to consume patterns (for --no-write benchmark).
+
+    Args:
+        patterns_chunk: List of (aut, pattern) tuples
+
+    Returns:
+        Number of patterns processed
+    """
+    # Simply consume the patterns (measures pattern generation overhead)
+    count = 0
+    for _ in patterns_chunk:
+        count += 1
+    return count
+
+
+def _write_cif_files(file_data_list):
+    """
+    Worker function to write CIF files from strings.
+
+    Args:
+        file_data_list: List of (filename, cif_string) tuples
+
+    Returns:
+        Number of files written
+    """
+    count = 0
+    for filename, cif_string in file_data_list:
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(cif_string)
+            count += 1
+        except Exception as e:
+            logging.error(f"Failed to write {filename}: {e}")
+    return count
 
 
 @dataclass(frozen=True)
@@ -264,15 +325,41 @@ class ScriptHelper:
             npatterns = self.sample
 
         if self.no_write:
-            # (for io-less benchmark)
+            # Parallel pattern generation benchmark (no I/O)
+            n_cores = multiprocessing.cpu_count()
+            chunk_size = max(100, npatterns // (n_cores * 20))
+            logging.info(f"Parallel pattern generation (no-write): chunk_size={chunk_size}, n_cores={n_cores}")
+
             pbar = tqdm.tqdm(
                 total=npatterns,
                 desc=f"Generating {npatterns} order structures",
                 **const.TQDM_CONF,
                 disable=const.DISABLE_PROGRESSBAR,
             )
-            for _ in self.substitutor.make_patterns():
-                pbar.update()
+
+            with multiprocessing.Pool(processes=n_cores) as pool:
+                pattern_batch = []
+                batch_results = []
+
+                for pattern in self.substitutor.make_patterns():
+                    pattern_batch.append(pattern)
+
+                    # Submit batch when it reaches chunk_size
+                    if len(pattern_batch) >= chunk_size:
+                        batch_results.append(pool.apply_async(_consume_patterns_chunk, (pattern_batch,)))
+                        pattern_batch = []
+
+                    # Update progress in real-time
+                    pbar.update()
+
+                # Submit remaining patterns
+                if pattern_batch:
+                    batch_results.append(pool.apply_async(_consume_patterns_chunk, (pattern_batch,)))
+
+                # Wait for all processing to complete
+                for result in batch_results:
+                    result.get()
+
             pbar.close()
             return
 
@@ -355,30 +442,59 @@ class ScriptHelper:
             )
 
         print(header, file=logio)
-        for i, packet in quantities_generator:
-            cifwriter = packet["cifwriter"]
-            ewald = packet["ewald"]
-            weight = packet["weight"]
-            letter = packet["letter"]
 
-            if self.max_ewald is not None and ewald > self.max_ewald:
-                continue
+        # Parallel CIF writing
+        n_cores = multiprocessing.cpu_count()
+        chunk_size = max(50, npatterns // (n_cores * 20))  # Smaller chunks for better load balancing
+        logging.info(f"Parallel CIF writing: chunk_size={chunk_size}, n_cores={n_cores}")
 
-            line = f"{i} {weight} {letter}"
-            if ewald is not None:
-                line = line + f" {ewald}"
-            if self.write_symm:
-                space_group = list(cifwriter.cif_file.data.values())[0]["_symmetry_space_group_name_H-M"]
-                line += line + f" {space_group}"
-            print(line, file=logio)
+        with multiprocessing.Pool(processes=n_cores) as pool:
+            file_batch = []
+            batch_results = []
 
-            try:
-                cifwriter.write_file(filename=filenames[i] + f"_{weight}.cif")
+            for i, packet in quantities_generator:
+                cifwriter = packet["cifwriter"]
+                ewald = packet["ewald"]
+                weight = packet["weight"]
+                letter = packet["letter"]
+
+                if self.max_ewald is not None and ewald is not None and ewald > self.max_ewald:
+                    continue
+
+                # Build log line
+                line = f"{i} {weight} {letter}"
+                if ewald is not None:
+                    line = line + f" {ewald}"
+                if self.write_symm:
+                    space_group = list(cifwriter.cif_file.data.values())[0]["_symmetry_space_group_name_H-M"]
+                    line = line + f" {space_group}"
+                print(line, file=logio)
+
+                # Convert CifWriter to string and prepare for parallel writing
+                cif_string = str(cifwriter)
+                filename = filenames[i] + f"_{weight}.cif"
+                file_batch.append((filename, cif_string))
+
+                # Submit batch to worker pool when it reaches chunk_size
+                if len(file_batch) >= chunk_size:
+                    batch_results.append(pool.apply_async(_write_cif_files, (file_batch,)))
+                    file_batch = []
+
+                # Update progress as we generate (not waiting for writes)
                 pbar.update()
-            # Warn if too many structures are generated
-            except IndexError:
-                logging.warning(f"Too many structures generated (>{npatterns}). Check `atol` value.")
-                break
+
+                if i >= npatterns - 1:
+                    break
+
+            # Submit remaining files
+            if file_batch:
+                batch_results.append(pool.apply_async(_write_cif_files, (file_batch,)))
+
+            # Wait for all writes to complete
+            for result in batch_results:
+                result.get()
+
+        # i should be set from the loop above
         pbar.close()
         dump_log()
 
@@ -460,7 +576,13 @@ class LabeledStructure(Structure):
         fname = os.path.basename(filename)
         if not fnmatch(fname.lower(), "*.cif*") and not fnmatch(fname.lower(), "*.mcif*"):
             raise ValueError("LabeledStructure only accepts CIFs.")
-        instance = super().from_file(filename, primitive=primitive, sort=sort, merge_tol=merge_tol)
+
+        # Use pycifrw instead of pymatgen.Structure.from_file
+        structure = parse_cif_to_structure(filename, primitive=primitive, sort=sort, merge_tol=merge_tol)
+
+        # Convert to LabeledStructure
+        instance = cls.from_sites(structure.sites)
+        instance._lattice = structure.lattice
 
         instance.read_label(filename, symmetrize=symmetrize)
         return instance
@@ -538,17 +660,27 @@ class LabeledStructure(Structure):
             except ValueError:
                 return float(string.split("(")[0])
 
-        encoding = getattr(io, "LOCALE_ENCODING", "utf8")
-        with open(cif_filename, "r", encoding=encoding, errors="surrogateescape") as f:
-            parser = CifParser.from_str(f.read())
+        # Use pycifrw instead of pymatgen CifParser
+        cif_dict_all = get_cif_dict(cif_filename)
 
-        # Since Structure only takes the first structure inside a CIF, do the same.
-        cif_dict = list(parser.as_dict().values())[0]
-        labels = cif_dict["_atom_site_label"]
-        x_list = map(ufloat, cif_dict["_atom_site_fract_x"])
-        y_list = map(ufloat, cif_dict["_atom_site_fract_y"])
-        z_list = map(ufloat, cif_dict["_atom_site_fract_z"])
+        # Get first block (same behavior as original)
+        cif_dict = list(cif_dict_all.values())[0]
+
+        def _as_list(v):
+            if isinstance(v, (list, tuple)):
+                return list(v)
+            return [v]
+
+        x_raw = _as_list(cif_dict["_atom_site_fract_x"])
+        y_raw = _as_list(cif_dict["_atom_site_fract_y"])
+        z_raw = _as_list(cif_dict["_atom_site_fract_z"])
+
+        x_list = map(ufloat, x_raw)
+        y_list = map(ufloat, y_raw)
+        z_list = map(ufloat, z_raw)
         coords = [(x, y, z) for x, y, z in zip(x_list, y_list, z_list)]
+
+        labels = _as_list(cif_dict["_atom_site_label"])
 
         # Merge labels to allow multiple references.
         cif_sites = []
@@ -565,12 +697,12 @@ class LabeledStructure(Structure):
 
         # Find equivalent sites.
         if symmetrize:
-            symm_ops = SpacegroupAnalyzer(self, symprec, angle_tolerance).get_space_group_operations()
+            symm_ops = get_symmetry_operations_from_spglib(self, symprec, angle_tolerance)
         else:
-            # A bit of trick.
-            parser.data = cif_dict
+            # Get symmetry operations from CIF
+            symops_list = get_symops_from_cif(cif_dict)
             # Spacegroup symbol and number are not important here.
-            symm_ops = SpacegroupOperations(0, 0, parser.get_symops(parser))
+            symm_ops = SpacegroupOperations(0, 0, symops_list)
 
         coords = [x.frac_coords for x in self.sites]
         cif_coords = [x.frac_coords for x in cif_sites]
@@ -586,7 +718,9 @@ class LabeledStructure(Structure):
             **const.TQDM_CONF,
             disable=const.DISABLE_PROGRESSBAR,
         ):
-            equivalent = [in_coord_list_pbc(o, site.frac_coords) for o in o_cif_coords]
+            # Use slightly larger tolerance than pymatgen default (1e-8) to handle
+            # coordinate rounding by CifParser (typically rounds to ~1e-4 precision)
+            equivalent = [in_coord_list_pbc(o, site.frac_coords, atol=const.DEFAULT_ATOL) for o in o_cif_coords]
 
             try:
                 equivalent_site = cif_sites[equivalent.index(True)]
