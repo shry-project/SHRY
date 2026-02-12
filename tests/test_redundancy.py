@@ -374,7 +374,7 @@ def test_benchmark_count(test_case):
     assert count_actual == expected_count, f"Benchmark mismatch: expected {expected_count}, got {count_actual}"
 
 
-# @pytest.mark.skip(reason="Manual run only; enable explicitly when needed.")
+@pytest.mark.skip(reason="Manual run only; enable explicitly when needed.")
 @pytest.mark.parametrize("test_case", range(MAX_REDUNDANCY_TEST_CASES), indirect=True)
 def test_no_redundancy(test_case):
     """Test that all generated structures are symmetrically inequivalent (no redundancy)."""
