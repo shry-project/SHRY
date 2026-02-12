@@ -9,8 +9,10 @@ import functools
 import itertools
 import logging
 import math
+import multiprocessing
 import random
 import sys
+import threading
 from typing import OrderedDict
 
 # python modules
@@ -48,6 +50,234 @@ np.set_printoptions(linewidth=1000, threshold=sys.maxsize)
 spglib.OLD_ERROR_HANDLING = False
 
 apply_pymatgen_patches()
+
+
+# Global variables for multiprocessing workers
+_worker_pm = None
+
+
+def _init_worker_invarless(perms, bits, bit_perm, nix):
+    """Initialize worker process with PatternMaker data (invarless search)."""
+    global _worker_pm
+    _worker_pm = {
+        "perms": perms,
+        "bits": bits,
+        "bit_perm": bit_perm,
+        "nix": nix,
+    }
+
+
+def _worker_search_invarless(args):
+    """Worker function for parallel invarless subtree search."""
+    import time
+
+    initial_state, stop = args
+    pattern, aut, pbs = initial_state
+
+    start_time = time.time()
+    perms = _worker_pm["perms"]
+    bit_perm = _worker_pm["bit_perm"]
+    nix = _worker_pm["nix"]
+
+    results = []
+    stack = [(pattern, aut, pbs)]
+    iterations = 0
+
+    while stack:
+        iterations += 1
+        pattern, aut, pbs = stack.pop()
+        if pattern.size == stop:
+            results.append((aut, pattern))
+            continue
+
+        # Tree is expanded by adding un-added sites
+        leaf_mask = np.ones(nix, dtype="bool")
+        leaf_mask[pattern] = False
+        leaf_array = np.flatnonzero(leaf_mask)
+
+        # Discard symmetry duplicates from the remaining leaves
+        if aut.size > 1 and leaf_mask.sum() > 1:
+            leaf_reps = perms[np.ix_(aut, leaf_array)].min(axis=0)
+            leaf_indices = np.searchsorted(leaf_array, leaf_reps)
+            uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
+            uniq_mask[leaf_indices] = True
+        else:
+            uniq_mask = np.ones(leaf_array.shape, dtype="bool")
+
+        # Insertion location
+        loci = pattern.searchsorted(leaf_array)
+
+        for i in np.flatnonzero(uniq_mask):
+            x = leaf_array[i]
+            j = loci[i]
+            _pbs = bit_perm[:, x] + pbs
+
+            _i = np.concatenate((pattern[:j], [x], pattern[j:]))
+            _aut = np.flatnonzero(_pbs == _pbs[-1])
+
+            # Compute canonical parent.
+            m = np.argmin(_pbs)
+            can_pattern = perms[m, _i]
+            discard_i = np.where(can_pattern == can_pattern.max())[0]
+
+            # If the new site is discarded then tree parent == canonical parent.
+            if j == discard_i:
+                stack.append((_i, _aut, _pbs))
+            # Check if tree parent is related to canonical parent.
+            elif _i[discard_i] in perms[_aut, x]:
+                stack.append((_i, _aut, _pbs))
+
+    elapsed = time.time() - start_time
+    import os
+
+    pid = os.getpid()
+    # Log subtree processing info
+    import logging
+
+    logging.info(f"  Worker {pid}: {len(results)} patterns, {iterations} iterations, {elapsed:.2f}s")
+
+    return results
+
+
+def _init_worker_invar(perms, bits, bit_perm, nix, invar, t_kind, shuffle):
+    """Initialize worker process with PatternMaker data (invar search)."""
+    global _worker_pm
+    _worker_pm = {
+        "perms": perms,
+        "bits": bits,
+        "bit_perm": bit_perm,
+        "nix": nix,
+        "invar": invar,
+        "t_kind": t_kind,
+        "shuffle": shuffle,
+    }
+
+
+def _worker_get_subobj_ts_sum(pattern, leaf_array, subobj_ts, invar):
+    """Calculate subobject Ts for sum t_kind."""
+    new_rows = invar[np.ix_(leaf_array, pattern)]
+    new_rows_sums = new_rows.sum(axis=1, keepdims=True)
+    part_new_row_sums = subobj_ts + new_rows
+    return np.concatenate((part_new_row_sums, new_rows_sums), axis=1)
+
+
+def _worker_get_subobj_ts_det(pattern, leaf_array, subobj_ts, invar):
+    """Calculate subobject Ts for det t_kind."""
+    subobj_ts_list = []
+    for leaf in leaf_array:
+        new_pattern = np.append(pattern, leaf)
+        pattern_invar = invar[np.ix_(new_pattern, new_pattern)]
+        det = np.abs(np.linalg.det(np.atleast_2d(pattern_invar)))
+        subobj_ts_list.append(np.array([det]))
+    return np.array(subobj_ts_list)
+
+
+def _worker_search_invar(args):
+    """Worker function for parallel invar subtree search."""
+    initial_state, stop = args
+
+    perms = _worker_pm["perms"]
+    bit_perm = _worker_pm["bit_perm"]
+    nix = _worker_pm["nix"]
+    invar = _worker_pm["invar"]
+    t_kind = _worker_pm["t_kind"]
+    shuffle = _worker_pm["shuffle"]
+
+    # Select appropriate get_subobj_ts function
+    if t_kind in ("sum", "plsum"):
+        get_subobj_ts = lambda p, l, s: _worker_get_subobj_ts_sum(p, l, s, invar)
+    elif t_kind == "det":
+        get_subobj_ts = lambda p, l, s: _worker_get_subobj_ts_det(p, l, s, invar)
+    else:
+        raise RuntimeError(f'Unrecognized T kind "{t_kind}"')
+
+    # Select appropriate mask functions based on t_kind
+    if t_kind == "sum":
+        get_not_reject_mask = lambda delta_t: ~(delta_t < 0).any(axis=1)
+        get_accept_mask = lambda delta_t: (delta_t > 0).all(axis=1)
+        get_mins = lambda subobj_ts: np.flatnonzero(subobj_ts == subobj_ts.min())
+    else:  # plsum or det (float comparison)
+        get_not_reject_mask = lambda delta_t: ~((delta_t < 0.0) & ~np.isclose(delta_t, 0.0)).any(axis=1)
+        get_accept_mask = lambda delta_t: ((delta_t > 0.0) & ~np.isclose(delta_t, 0.0)).all(axis=1)
+        get_mins = lambda subobj_ts: np.flatnonzero(np.isclose(subobj_ts, subobj_ts.min()))
+
+    results = []
+    stack = [initial_state]
+
+    while stack:
+        subobj_ts, pattern, aut, pbs = stack.pop()
+        if pattern.size == stop:
+            results.append((aut, pattern))
+            continue
+
+        # Invert index
+        leaf_mask = np.ones(nix, dtype="bool")
+        leaf_mask[pattern] = False
+        leaf_array = np.flatnonzero(leaf_mask)
+
+        # Calculate subobject Ts for all leaves
+        leaf_subobj_ts = get_subobj_ts(pattern, leaf_array, subobj_ts)
+
+        # Reject all leaves where any T is smaller than the new row's T
+        delta_t = leaf_subobj_ts[:, :-1] - leaf_subobj_ts[:, -1:]
+        not_reject_mask = get_not_reject_mask(delta_t)
+        if not not_reject_mask.any():
+            continue
+
+        # Discard symmetry duplicates from the remaining leaves
+        if aut.size > 1 and not_reject_mask.sum() > 1:
+            not_reject_leaf = leaf_array[not_reject_mask]
+            leaf_reps = perms[np.ix_(aut, not_reject_leaf)].min(axis=0)
+            leaf_indices = leaf_array.searchsorted(leaf_reps)
+            uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
+            uniq_mask[leaf_indices] = True
+        else:
+            uniq_mask = not_reject_mask
+
+        # Insertion location
+        loci = pattern.searchsorted(leaf_array)
+
+        accept_mask = get_accept_mask(delta_t)
+        accept_mask &= uniq_mask
+        accepts = leaf_array[accept_mask]
+
+        # Iterate
+        if shuffle:
+            indices = np.flatnonzero(uniq_mask)
+            np.random.shuffle(indices)
+        else:
+            indices = np.flatnonzero(uniq_mask)
+
+        for i in indices:
+            x = leaf_array[i]
+            j = loci[i]
+            _pbs = bit_perm[:, x] + pbs
+
+            _subobj_ts = leaf_subobj_ts[i].copy()
+            _subobj_ts[j:] = np.concatenate((_subobj_ts[-1:], _subobj_ts[j:-1]))
+
+            _i = np.concatenate((pattern[:j], [x], pattern[j:]))
+            _aut = np.flatnonzero(_pbs == _pbs[-1])
+
+            if x in accepts:
+                stack.append((_subobj_ts, _i, _aut, _pbs))
+                continue
+
+            # Compute canonical parent.
+            ts_min_i = get_mins(_subobj_ts)
+            _sub = _i[ts_min_i]
+            m = np.argmin(_pbs)
+            can_pattern = perms[m, _sub]
+            discard_i = ts_min_i[can_pattern == can_pattern.max()]
+
+            # If the new site is discarded then tree parent == canonical parent.
+            if j == discard_i:
+                stack.append((_subobj_ts, _i, _aut, _pbs))
+            # Check if tree parent is related to canonical parent.
+            elif _i[discard_i] in perms[_aut, x]:
+                stack.append((_subobj_ts, _i, _aut, _pbs))
+
+    return results
 
 
 def structure_to_spglib_cell(structure):
@@ -402,6 +632,7 @@ class Substitutor:
         "_template_cifwriter",
         "_template_structure",
         "_rg",
+        "_n_jobs",
     )
 
     def __init__(
@@ -416,11 +647,13 @@ class Substitutor:
         no_dmat=const.DEFAULT_NO_DMAT,
         t_kind=const.DEFAULT_T_KIND,
         cache=None,  # "True", "False", "None" (default)
+        n_jobs=-1,  # Number of parallel jobs (-1 for all cores)
     ):
         self._symprec = symprec
         self._angle_tolerance = angle_tolerance
         self._no_dmat = no_dmat
         self._t_kind = t_kind
+        self._n_jobs = n_jobs
         # TODO: These two are consequential to self._structure, so should be property
         self._atol = atol
         self._shuffle = shuffle
@@ -751,6 +984,7 @@ class Substitutor:
                 t_kind=self._t_kind,
                 shuffle=self._shuffle,
                 rg=self._rg,
+                n_jobs=self._n_jobs,
             )
             row_map = pm.get_row_map()
             index_map = pm.get_index_map()
@@ -770,6 +1004,7 @@ class Substitutor:
                     cache=self.cache,
                     shuffle=self._shuffle,
                     rg=self._rg,
+                    n_jobs=self._n_jobs,
                 )
                 row_map = pm.get_row_map()
                 index_map = pm.get_index_map()
@@ -1227,6 +1462,9 @@ class PatternMaker:
         "_get_mins",
         "_iterate",
         "_rg",
+        "_n_jobs",
+        "_t_kind",
+        "_shuffle",
     )
 
     def __init__(
@@ -1238,7 +1476,15 @@ class PatternMaker:
         cache=False,
         shuffle=False,
         rg=None,
+        n_jobs=-1,
     ):
+        # Store n_jobs parameter
+        self._n_jobs = n_jobs
+
+        # Store t_kind and shuffle for parallel execution
+        self._t_kind = t_kind
+        self._shuffle = shuffle
+
         # Algo select bits
         if invar is None:
             self._search = self._invarless_search
@@ -1508,54 +1754,78 @@ class PatternMaker:
         primed = [self._primes_list()[x] for x in array.flatten()]
         return np.log(np.array(primed).reshape(array.shape))
 
-    def _invarless_search(self, start=0, stop=None):
+    def _expand_one_level_invarless(self, states):
         """
-        Alternative definition of canonical parent without invariant (much slower).
+        Expand given states by one level for invarless search.
 
         Args:
-            stop (int): Maximum substitution size before stop
+            states: List of (pattern, aut, bs) tuples
+
+        Returns:
+            List of expanded (pattern, aut, bs) tuples
         """
-        if stop is None:
-            stop = self._nix // 2
-        stop = min(stop, self._nix - stop)
+        expanded_states = []
 
-        enumerator = self._get_polya([self._perms])
-        n_pred = enumerator.count(((stop, self._nix - stop),))
+        for pattern, aut, pbs in states:
+            # Tree is expanded by adding un-added sites
+            leaf_mask = np.ones(self._nix, dtype="bool")
+            leaf_mask[pattern] = False
+            leaf_array = np.flatnonzero(leaf_mask)
 
-        # Progress bar.
-        pbar = tqdm.tqdm(
-            total=n_pred,
-            desc=f"Making patterns ({stop}/{self._nix})",
-            **const.TQDM_CONF,
-            disable=const.DISABLE_PROGRESSBAR,
-        )
+            # Discard symmetry duplicates from the remaining leaves
+            if aut.size > 1 and leaf_mask.sum() > 1:
+                leaf_reps = self._perms[np.ix_(aut, leaf_array)].min(axis=0)
+                leaf_indices = np.searchsorted(leaf_array, leaf_reps)
+                uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
+                uniq_mask[leaf_indices] = True
+            else:
+                uniq_mask = np.ones(leaf_array.shape, dtype="bool")
 
-        stack = []
-        if not start:
-            # Fill first stack
-            noniso_orbits = np.unique(self._perms.min(axis=0))
-            for _i in noniso_orbits:
-                pattern = np.array([_i])
-                bitsum = self._bits[_i]
-                patch = np.zeros(self._nix, dtype=int)
-                patch[_i] = 1
-                bs = self._bit_perm.dot(patch)
-                o_bitsums = self._bit_perm.dot(patch)
-                aut = np.flatnonzero(o_bitsums == bitsum)
-                stack.append((pattern, aut, bs))
-        else:
-            patterns = self._patterns[start]
-            auts = self._auts[start]
-            for pattern, aut in zip(patterns, auts):
-                bs = self._bit_perm[:, pattern].sum(axis=1)
-                stack.append((pattern, aut, bs))
+            # Insertion location
+            loci = pattern.searchsorted(leaf_array)
+
+            for i in self._iterate(uniq_mask):
+                x = leaf_array[i]
+                j = loci[i]
+                _pbs = self._bit_perm[:, x] + pbs
+
+                _i = np.concatenate((pattern[:j], [x], pattern[j:]))
+                _aut = np.flatnonzero(_pbs == _pbs[-1])
+
+                # Compute canonical parent.
+                m = np.argmin(_pbs)
+                can_pattern = self._perms[m, _i]
+                discard_i = np.where(can_pattern == can_pattern.max())[0]
+
+                # If the new site is discarded then tree parent == canonical parent.
+                if j == discard_i:
+                    expanded_states.append((_i, _aut, _pbs))
+                # Check if tree parent is related to canonical parent.
+                elif _i[discard_i] in self._perms[_aut, x]:
+                    expanded_states.append((_i, _aut, _pbs))
+
+        return expanded_states
+
+    def _search_subtree_invarless(self, initial_state, stop):
+        """
+        Search a subtree starting from initial_state (for parallel execution).
+
+        Args:
+            initial_state: (pattern, aut, bs) tuple
+            stop: Maximum substitution size
+
+        Returns:
+            List of (aut, pattern) tuples
+        """
+        results = []
+        stack = [initial_state]
 
         while stack:
             pattern, aut, pbs = stack.pop()
             if pattern.size == stop:
-                yield aut, pattern
-                pbar.update()
+                results.append((aut, pattern))
                 continue
+
             # Tree is expanded by adding un-added sites
             leaf_mask = np.ones(self._nix, dtype="bool")
             leaf_mask[pattern] = False
@@ -1592,8 +1862,318 @@ class PatternMaker:
                 # Check if tree parent is related to canonical parent.
                 elif _i[discard_i] in self._perms[_aut, x]:
                     stack.append((_i, _aut, _pbs))
-        pbar.close()
-        tqdm.tqdm(disable=const.DISABLE_PROGRESSBAR).write("Done.")
+
+        return results
+
+    def _expand_one_level_invar(self, states):
+        """
+        Expand given states by one level for invar search.
+
+        Args:
+            states: List of (subobj_ts, pattern, aut, bs) tuples
+
+        Returns:
+            List of expanded (subobj_ts, pattern, aut, bs) tuples
+        """
+        expanded_states = []
+
+        for subobj_ts, pattern, aut, pbs in states:
+            # Invert index
+            leaf_mask = np.ones(self._nix, dtype="bool")
+            leaf_mask[pattern] = False
+            leaf_array = np.flatnonzero(leaf_mask)
+
+            # Calculate subobject Ts for all leaves
+            leaf_subobj_ts = self._get_subobj_ts(pattern, leaf_array, subobj_ts)
+
+            # Reject all leaves where any T is smaller than the new row's T
+            delta_t = leaf_subobj_ts[:, :-1] - leaf_subobj_ts[:, -1:]
+            not_reject_mask = self._get_not_reject_mask(delta_t)
+            if not not_reject_mask.any():
+                continue
+
+            # Discard symmetry duplicates from the remaining leaves
+            if aut.size > 1 and not_reject_mask.sum() > 1:
+                not_reject_leaf = leaf_array[not_reject_mask]
+                leaf_reps = self._perms[np.ix_(aut, not_reject_leaf)].min(axis=0)
+                leaf_indices = leaf_array.searchsorted(leaf_reps)
+                uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
+                uniq_mask[leaf_indices] = True
+            else:
+                uniq_mask = not_reject_mask
+
+            # Insertion location
+            loci = pattern.searchsorted(leaf_array)
+
+            accept_mask = self._get_accept_mask(delta_t)
+            accept_mask &= uniq_mask
+            accepts = leaf_array[accept_mask]
+
+            for i in self._iterate(uniq_mask):
+                x = leaf_array[i]
+                j = loci[i]
+                _pbs = self._bit_perm[:, x] + pbs
+
+                _subobj_ts = leaf_subobj_ts[i]
+                _subobj_ts[j:] = np.concatenate((_subobj_ts[-1:], _subobj_ts[j:-1]))
+
+                _i = np.concatenate((pattern[:j], [x], pattern[j:]))
+                _aut = np.flatnonzero(_pbs == _pbs[-1])
+
+                if x in accepts:
+                    expanded_states.append((_subobj_ts, _i, _aut, _pbs))
+                    continue
+
+                # Compute canonical parent.
+                ts_min_i = self._get_mins(_subobj_ts)
+                _sub = _i[ts_min_i]
+                m = np.argmin(_pbs)
+                can_pattern = self._perms[m, _sub]
+                discard_i = ts_min_i[can_pattern == can_pattern.max()]
+
+                # If the new site is discarded then tree parent == canonical parent.
+                if j == discard_i:
+                    expanded_states.append((_subobj_ts, _i, _aut, _pbs))
+                # Check if tree parent is related to canonical parent.
+                elif _i[discard_i] in self._perms[_aut, x]:
+                    expanded_states.append((_subobj_ts, _i, _aut, _pbs))
+
+        return expanded_states
+
+    def _search_subtree_invar(self, initial_state, stop):
+        """
+        Search a subtree with invariant starting from initial_state (for parallel execution).
+
+        Args:
+            initial_state: (subobj_ts, pattern, aut, bs) tuple
+            stop: Maximum substitution size
+
+        Returns:
+            List of (aut, pattern) tuples
+        """
+        results = []
+        stack = [initial_state]
+
+        while stack:
+            subobj_ts, pattern, aut, pbs = stack.pop()
+            if pattern.size == stop:
+                results.append((aut, pattern))
+                continue
+
+            # Invert index
+            leaf_mask = np.ones(self._nix, dtype="bool")
+            leaf_mask[pattern] = False
+            leaf_array = np.flatnonzero(leaf_mask)
+
+            # Calculate subobject Ts for all leaves
+            leaf_subobj_ts = self._get_subobj_ts(pattern, leaf_array, subobj_ts)
+
+            # Reject all leaves where any T is smaller than the new row's T
+            delta_t = leaf_subobj_ts[:, :-1] - leaf_subobj_ts[:, -1:]
+            not_reject_mask = self._get_not_reject_mask(delta_t)
+            if not not_reject_mask.any():
+                continue
+
+            # Discard symmetry duplicates from the remaining leaves
+            if aut.size > 1 and not_reject_mask.sum() > 1:
+                not_reject_leaf = leaf_array[not_reject_mask]
+                leaf_reps = self._perms[np.ix_(aut, not_reject_leaf)].min(axis=0)
+                leaf_indices = leaf_array.searchsorted(leaf_reps)
+                uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
+                uniq_mask[leaf_indices] = True
+            else:
+                uniq_mask = not_reject_mask
+
+            # Insertion location
+            loci = pattern.searchsorted(leaf_array)
+
+            accept_mask = self._get_accept_mask(delta_t)
+            accept_mask &= uniq_mask
+            accepts = leaf_array[accept_mask]
+
+            for i in self._iterate(uniq_mask):
+                x = leaf_array[i]
+                j = loci[i]
+                _pbs = self._bit_perm[:, x] + pbs
+
+                _subobj_ts = leaf_subobj_ts[i]
+                _subobj_ts[j:] = np.concatenate((_subobj_ts[-1:], _subobj_ts[j:-1]))
+
+                _i = np.concatenate((pattern[:j], [x], pattern[j:]))
+                _aut = np.flatnonzero(_pbs == _pbs[-1])
+
+                if x in accepts:
+                    stack.append((_subobj_ts, _i, _aut, _pbs))
+                    continue
+
+                # Compute canonical parent.
+                ts_min_i = self._get_mins(_subobj_ts)
+                _sub = _i[ts_min_i]
+                m = np.argmin(_pbs)
+                can_pattern = self._perms[m, _sub]
+                discard_i = ts_min_i[can_pattern == can_pattern.max()]
+
+                # If the new site is discarded then tree parent == canonical parent.
+                if j == discard_i:
+                    stack.append((_subobj_ts, _i, _aut, _pbs))
+                # Check if tree parent is related to canonical parent.
+                elif _i[discard_i] in self._perms[_aut, x]:
+                    stack.append((_subobj_ts, _i, _aut, _pbs))
+
+        return results
+
+    def _invarless_search(self, start=0, stop=None):
+        """
+        Alternative definition of canonical parent without invariant (much slower).
+
+        Args:
+            stop (int): Maximum substitution size before stop
+        """
+        if stop is None:
+            stop = self._nix // 2
+        stop = min(stop, self._nix - stop)
+
+        enumerator = self._get_polya([self._perms])
+        n_pred = enumerator.count(((stop, self._nix - stop),))
+
+        # Prepare initial states for (parallel) search
+        initial_states = []
+        if not start:
+            # Fill first stack
+            noniso_orbits = np.unique(self._perms.min(axis=0))
+            for _i in noniso_orbits:
+                pattern = np.array([_i])
+                bitsum = self._bits[_i]
+                patch = np.zeros(self._nix, dtype=int)
+                patch[_i] = 1
+                bs = self._bit_perm.dot(patch)
+                o_bitsums = self._bit_perm.dot(patch)
+                aut = np.flatnonzero(o_bitsums == bitsum)
+                initial_states.append((pattern, aut, bs))
+        else:
+            patterns = self._patterns[start]
+            auts = self._auts[start]
+            for pattern, aut in zip(patterns, auts):
+                bs = self._bit_perm[:, pattern].sum(axis=1)
+                initial_states.append((pattern, aut, bs))
+
+        # Adaptive depth expansion: expand as deep as needed for good load balancing
+        n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
+        min_splits = max(n_cores * 8, 32)  # Target: 8x cores
+        max_depth = min(stop - 1, 10)  # Can expand up to stop-1, max 10
+        current_depth = 1 if not start else start
+
+        logging.info(f"Initial: {len(initial_states)} subtrees, target: {min_splits}, max_depth: {max_depth}, stop: {stop}")
+
+        # Keep expanding until we have enough subtrees or reach max depth
+        while self._n_jobs != 1 and len(initial_states) < min_splits and current_depth < max_depth and current_depth < stop:
+            prev_count = len(initial_states)
+            current_depth += 1
+            logging.info(f"Expanding to depth {current_depth} (currently {prev_count} subtrees, target: {min_splits})")
+            initial_states = self._expand_one_level_invarless(initial_states)
+            new_count = len(initial_states)
+            logging.info(f"After expansion: {new_count} subtrees (increased by {new_count - prev_count})")
+            if len(initial_states) >= min_splits:
+                logging.info(f"Target reached: {len(initial_states)} subtrees at depth {current_depth}")
+                break
+
+        if self._n_jobs != 1 and len(initial_states) < min_splits:
+            logging.warning(f"Could not reach target splits: {len(initial_states)} < {min_splits} (depth limit reached)")
+
+        # Parallel execution if n_jobs != 1 (with dynamic load balancing)
+        n_splits = len(initial_states)
+        if self._n_jobs != 1 and n_splits > 1:
+            n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
+            logging.info(f"Parallel search (dynamic): {n_splits} subtrees across {n_cores} cores (n_jobs={self._n_jobs})")
+
+            pbar_subtrees = tqdm.tqdm(
+                total=n_splits,
+                desc=f"Processing subtrees ({stop}/{self._nix})",
+                **const.TQDM_CONF,
+                disable=const.DISABLE_PROGRESSBAR,
+            )
+
+            # Use multiprocessing Pool with imap_unordered for dynamic load balancing
+            pool = multiprocessing.Pool(
+                processes=n_cores,
+                initializer=_init_worker_invarless,
+                initargs=(self._perms, self._bits, self._bit_perm, self._nix),
+            )
+
+            try:
+                # imap_unordered with chunksize=1 for optimal load balancing
+                for result in pool.imap_unordered(
+                    _worker_search_invarless, [(state, stop) for state in initial_states], chunksize=1
+                ):
+                    pbar_subtrees.update(1)
+                    # Yield all results from this subtree
+                    for aut, pattern in result:
+                        yield aut, pattern
+            finally:
+                pool.close()
+                pool.join()
+
+            pbar_subtrees.close()
+            tqdm.tqdm(disable=const.DISABLE_PROGRESSBAR).write("Done.")
+        else:
+            # Sequential execution (original code)
+            if n_splits > 1:
+                logging.info(f"Sequential search: {n_splits} subtrees (n_jobs={self._n_jobs})")
+            else:
+                logging.info(f"Sequential search: 1 subtree (parallelization not applicable)")
+
+            pbar = tqdm.tqdm(
+                total=n_pred,
+                desc=f"Making patterns ({stop}/{self._nix})",
+                **const.TQDM_CONF,
+                disable=const.DISABLE_PROGRESSBAR,
+            )
+
+            stack = list(initial_states)
+            while stack:
+                pattern, aut, pbs = stack.pop()
+                if pattern.size == stop:
+                    yield aut, pattern
+                    pbar.update()
+                    continue
+                # Tree is expanded by adding un-added sites
+                leaf_mask = np.ones(self._nix, dtype="bool")
+                leaf_mask[pattern] = False
+                leaf_array = np.flatnonzero(leaf_mask)
+
+                # Discard symmetry duplicates from the remaining leaves
+                if aut.size > 1 and leaf_mask.sum() > 1:
+                    leaf_reps = self._perms[np.ix_(aut, leaf_array)].min(axis=0)
+                    leaf_indices = np.searchsorted(leaf_array, leaf_reps)
+                    uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
+                    uniq_mask[leaf_indices] = True
+                else:
+                    uniq_mask = np.ones(leaf_array.shape, dtype="bool")
+
+                # Insertion location
+                loci = pattern.searchsorted(leaf_array)
+
+                for i in self._iterate(uniq_mask):
+                    x = leaf_array[i]
+                    j = loci[i]
+                    _pbs = self._bit_perm[:, x] + pbs
+
+                    _i = np.concatenate((pattern[:j], [x], pattern[j:]))
+                    _aut = np.flatnonzero(_pbs == _pbs[-1])
+
+                    # Compute canonical parent.
+                    m = np.argmin(_pbs)
+                    can_pattern = self._perms[m, _i]
+                    discard_i = np.where(can_pattern == can_pattern.max())[0]
+
+                    # If the new site is discarded then tree parent == canonical parent.
+                    if j == discard_i:
+                        stack.append((_i, _aut, _pbs))
+                    # Check if tree parent is related to canonical parent.
+                    elif _i[discard_i] in self._perms[_aut, x]:
+                        stack.append((_i, _aut, _pbs))
+            pbar.close()
+            tqdm.tqdm(disable=const.DISABLE_PROGRESSBAR).write("Done.")
 
     def _get_sum_subobj_ts(self, pattern, leaf_array, subobj_ts):
         new_rows = self.invar[np.ix_(leaf_array, pattern)]
@@ -1660,15 +2240,8 @@ class PatternMaker:
         enumerator = self._get_polya([self._perms])
         n_pred = enumerator.count(((stop, self._nix - stop),))
 
-        # Progress bar.
-        pbar = tqdm.tqdm(
-            total=n_pred,
-            desc=f"Making patterns ({stop}/{self._nix})",
-            **const.TQDM_CONF,
-            disable=const.DISABLE_PROGRESSBAR,
-        )
-
-        stack = []
+        # Prepare initial states for (parallel) search
+        initial_states = []
         if not start:
             # Populate the first layer.
             noniso_orbits = np.unique(self._perms.min(axis=0))
@@ -1681,86 +2254,159 @@ class PatternMaker:
                 bs = self._bit_perm.dot(patch)
                 aut = np.flatnonzero(bs == bitsum)
                 subobj_ts = np.array([0])
-                stack.append((subobj_ts, pattern, aut, bs))
+                initial_states.append((subobj_ts, pattern, aut, bs))
         else:
             patterns = self._patterns[start]
             auts = self._auts[start]
             for pattern, aut in zip(patterns, auts):
                 bs = self._bit_perm[:, pattern].sum(axis=1)
                 subobj_ts = self.invar[np.ix_(pattern, pattern)].sum(axis=1)
-                stack.append((subobj_ts, pattern, aut, bs))
+                initial_states.append((subobj_ts, pattern, aut, bs))
 
-        while stack:
-            subobj_ts, pattern, aut, pbs = stack.pop()
-            if pattern.size == stop:
-                yield aut, pattern
-                pbar.update()
-                continue
-            # Invert index
-            leaf_mask = np.ones(self._nix, dtype="bool")
-            leaf_mask[pattern] = False
-            leaf_array = np.flatnonzero(leaf_mask)
+        # Adaptive depth expansion: expand as deep as needed for good load balancing
+        n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
+        min_splits = max(n_cores * 8, 32)  # Target: 8x cores
+        max_depth = min(stop - 1, 10)  # Can expand up to stop-1, max 10
+        current_depth = 1 if not start else start
 
-            # Calculate subobject Ts for all leaves
-            leaf_subobj_ts = self._get_subobj_ts(pattern, leaf_array, subobj_ts)
+        logging.info(f"Initial: {len(initial_states)} subtrees, target: {min_splits}, max_depth: {max_depth}, stop: {stop}")
 
-            # Reject all leaves where any T is smaller than the new row's T
-            delta_t = leaf_subobj_ts[:, :-1] - leaf_subobj_ts[:, -1:]
-            not_reject_mask = self._get_not_reject_mask(delta_t)
-            if not not_reject_mask.any():
-                continue
+        # Keep expanding until we have enough subtrees or reach max depth
+        while self._n_jobs != 1 and len(initial_states) < min_splits and current_depth < max_depth and current_depth < stop:
+            prev_count = len(initial_states)
+            current_depth += 1
+            logging.info(f"Expanding to depth {current_depth} (currently {prev_count} subtrees, target: {min_splits})")
+            initial_states = self._expand_one_level_invar(initial_states)
+            new_count = len(initial_states)
+            logging.info(f"After expansion: {new_count} subtrees (increased by {new_count - prev_count})")
+            if len(initial_states) >= min_splits:
+                logging.info(f"Target reached: {len(initial_states)} subtrees at depth {current_depth}")
+                break
 
-            # Discard symmetry duplicates from the remaining leaves
-            if aut.size > 1 and not_reject_mask.sum() > 1:
-                not_reject_leaf = leaf_array[not_reject_mask]
-                leaf_reps = self._perms[np.ix_(aut, not_reject_leaf)].min(axis=0)
-                leaf_indices = leaf_array.searchsorted(leaf_reps)
-                uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
-                uniq_mask[leaf_indices] = True
+        if self._n_jobs != 1 and len(initial_states) < min_splits:
+            logging.warning(f"Could not reach target splits: {len(initial_states)} < {min_splits} (depth limit reached)")
+
+        # Parallel execution if n_jobs != 1 (with dynamic load balancing)
+        n_splits = len(initial_states)
+        if self._n_jobs != 1 and n_splits > 1:
+            n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
+            logging.info(f"Parallel search (dynamic): {n_splits} subtrees across {n_cores} cores (n_jobs={self._n_jobs})")
+
+            pbar_subtrees = tqdm.tqdm(
+                total=n_splits,
+                desc=f"Processing subtrees ({stop}/{self._nix})",
+                **const.TQDM_CONF,
+                disable=const.DISABLE_PROGRESSBAR,
+            )
+
+            # Use multiprocessing Pool with imap_unordered for dynamic load balancing
+            pool = multiprocessing.Pool(
+                processes=n_cores,
+                initializer=_init_worker_invar,
+                initargs=(self._perms, self._bits, self._bit_perm, self._nix, self.invar, self._t_kind, self._shuffle),
+            )
+
+            try:
+                # imap_unordered with chunksize=1 for optimal load balancing
+                for result in pool.imap_unordered(
+                    _worker_search_invar, [(state, stop) for state in initial_states], chunksize=1
+                ):
+                    pbar_subtrees.update(1)
+                    # Yield all results from this subtree
+                    for aut, pattern in result:
+                        yield aut, pattern
+            finally:
+                pool.close()
+                pool.join()
+
+            pbar_subtrees.close()
+            tqdm.tqdm(disable=const.DISABLE_PROGRESSBAR).write("Done.")
+        else:
+            # Sequential execution (original code)
+            if n_splits > 1:
+                logging.info(f"Sequential search: {n_splits} subtrees (n_jobs={self._n_jobs})")
             else:
-                uniq_mask = not_reject_mask
+                logging.info(f"Sequential search: 1 subtree (parallelization not applicable)")
 
-            # Insertion location TODO: without this possible?
-            loci = pattern.searchsorted(leaf_array)
+            pbar = tqdm.tqdm(
+                total=n_pred,
+                desc=f"Making patterns ({stop}/{self._nix})",
+                **const.TQDM_CONF,
+                disable=const.DISABLE_PROGRESSBAR,
+            )
 
-            accept_mask = self._get_accept_mask(delta_t)
-            accept_mask &= uniq_mask
-            accepts = leaf_array[accept_mask]
+            stack = list(initial_states)
+            while stack:
+                subobj_ts, pattern, aut, pbs = stack.pop()
+                if pattern.size == stop:
+                    yield aut, pattern
+                    pbar.update()
+                    continue
+                # Invert index
+                leaf_mask = np.ones(self._nix, dtype="bool")
+                leaf_mask[pattern] = False
+                leaf_array = np.flatnonzero(leaf_mask)
 
-            for i in self._iterate(uniq_mask):
-                x = leaf_array[i]
-                j = loci[i]
-                _pbs = self._bit_perm[:, x] + pbs
+                # Calculate subobject Ts for all leaves
+                leaf_subobj_ts = self._get_subobj_ts(pattern, leaf_array, subobj_ts)
 
-                _subobj_ts = leaf_subobj_ts[i]
-                _subobj_ts[j:] = np.concatenate((_subobj_ts[-1:], _subobj_ts[j:-1]))
-
-                _i = np.concatenate((pattern[:j], [x], pattern[j:]))
-                # NOTE: just in case I fail to consistently sort perm
-                # bitsum = sum([self._bits[y] for y in _i])
-                # _aut = np.flatnonzero(_pbs == bitsum)
-                _aut = np.flatnonzero(_pbs == _pbs[-1])
-
-                if x in accepts:
-                    stack.append((_subobj_ts, _i, _aut, _pbs))
+                # Reject all leaves where any T is smaller than the new row's T
+                delta_t = leaf_subobj_ts[:, :-1] - leaf_subobj_ts[:, -1:]
+                not_reject_mask = self._get_not_reject_mask(delta_t)
+                if not not_reject_mask.any():
                     continue
 
-                # Compute canonical parent.
-                ts_min_i = self._get_mins(_subobj_ts)
-                _sub = _i[ts_min_i]
-                m = np.argmin(_pbs)
-                can_pattern = self._perms[m, _sub]
-                discard_i = ts_min_i[can_pattern == can_pattern.max()]
+                # Discard symmetry duplicates from the remaining leaves
+                if aut.size > 1 and not_reject_mask.sum() > 1:
+                    not_reject_leaf = leaf_array[not_reject_mask]
+                    leaf_reps = self._perms[np.ix_(aut, not_reject_leaf)].min(axis=0)
+                    leaf_indices = leaf_array.searchsorted(leaf_reps)
+                    uniq_mask = np.zeros(leaf_array.shape, dtype="bool")
+                    uniq_mask[leaf_indices] = True
+                else:
+                    uniq_mask = not_reject_mask
 
-                # If the new site is discarded then tree parent == canonical parent.
-                if j == discard_i:
-                    stack.append((_subobj_ts, _i, _aut, _pbs))
-                # Check if tree parent is related to canonical parent.
-                elif _i[discard_i] in self._perms[_aut, x]:
-                    stack.append((_subobj_ts, _i, _aut, _pbs))
-        pbar.close()
-        tqdm.tqdm(disable=const.DISABLE_PROGRESSBAR).write("Done.")
-        # self._gen_flag[stop] = True
+                # Insertion location TODO: without this possible?
+                loci = pattern.searchsorted(leaf_array)
+
+                accept_mask = self._get_accept_mask(delta_t)
+                accept_mask &= uniq_mask
+                accepts = leaf_array[accept_mask]
+
+                for i in self._iterate(uniq_mask):
+                    x = leaf_array[i]
+                    j = loci[i]
+                    _pbs = self._bit_perm[:, x] + pbs
+
+                    _subobj_ts = leaf_subobj_ts[i]
+                    _subobj_ts[j:] = np.concatenate((_subobj_ts[-1:], _subobj_ts[j:-1]))
+
+                    _i = np.concatenate((pattern[:j], [x], pattern[j:]))
+                    # NOTE: just in case I fail to consistently sort perm
+                    # bitsum = sum([self._bits[y] for y in _i])
+                    # _aut = np.flatnonzero(_pbs == bitsum)
+                    _aut = np.flatnonzero(_pbs == _pbs[-1])
+
+                    if x in accepts:
+                        stack.append((_subobj_ts, _i, _aut, _pbs))
+                        continue
+
+                    # Compute canonical parent.
+                    ts_min_i = self._get_mins(_subobj_ts)
+                    _sub = _i[ts_min_i]
+                    m = np.argmin(_pbs)
+                    can_pattern = self._perms[m, _sub]
+                    discard_i = ts_min_i[can_pattern == can_pattern.max()]
+
+                    # If the new site is discarded then tree parent == canonical parent.
+                    if j == discard_i:
+                        stack.append((_subobj_ts, _i, _aut, _pbs))
+                    # Check if tree parent is related to canonical parent.
+                    elif _i[discard_i] in self._perms[_aut, x]:
+                        stack.append((_subobj_ts, _i, _aut, _pbs))
+            pbar.close()
+            tqdm.tqdm(disable=const.DISABLE_PROGRESSBAR).write("Done.")
+            # self._gen_flag[stop] = True
 
 
 class Polya:
