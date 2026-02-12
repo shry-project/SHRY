@@ -20,7 +20,7 @@ import sympy
 import tqdm
 from pymatgen.analysis.ewald import EwaldSummation
 from pymatgen.core.composition import Composition
-from pymatgen.io.cif import CifBlock, CifParser, CifWriter
+from pymatgen.io.cif import CifBlock, CifWriter
 from pymatgen.symmetry.analyzer import SpacegroupOperations
 from pymatgen.symmetry.structure import SymmetrizedStructure
 from pymatgen.util.coord import find_in_coord_list_pbc
@@ -33,6 +33,7 @@ from pymatgen.core import Structure
 # shry modules
 from . import const
 from .patches import apply_pymatgen_patches
+from .cif_io import parse_cif_string_to_structure
 
 # shry version control
 try:
@@ -1181,8 +1182,13 @@ class Substitutor:
         """
         # TODO: less ad hoc implementation.
         cifwriter = self._get_cifwriter(p, symprec)
-        cifparser = CifParser.from_str(str(cifwriter))
-        structure = cifparser.parse_structures(primitive=False)[0]
+        structure = parse_cif_string_to_structure(
+            str(cifwriter),
+            primitive=False,
+            sort=False,
+            merge_tol=0.0,
+            keep_oxidation_states=True,
+        )
         try:
             if not np.isclose(structure.charge, 0.0):
                 logging.warning(f"Unit cell is charged: (total charge = {structure.charge}).")

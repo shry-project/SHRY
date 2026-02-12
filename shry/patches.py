@@ -17,14 +17,15 @@ from monty.fractions import gcd_float
 from pymatgen.core import Composition, Species
 from pymatgen.core.composition import CompositionError, reduce_formula
 from pymatgen.core.periodic_table import get_el_sp
-from pymatgen.io.cif import CifParser, str2float
 from pymatgen.io.vasp.inputs import Poscar
 
 from . import const
+from .cif_io import str2float  # Use pycifrw-compatible version
 
 _APPLIED = False
 
 # Patched extra functionalities and bug fixes on top of Pymatgen's classes.
+
 
 def get_integer_formula_and_factor(
     self,
@@ -239,7 +240,5 @@ def apply_pymatgen_patches() -> None:
     Poscar.site_symbols = site_symbols
     Poscar.natoms = natoms
     Poscar.syms = syms
-
-    CifParser.parse_oxi_states = parse_oxi_states
 
     _APPLIED = True
