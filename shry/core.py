@@ -726,8 +726,10 @@ class Substitutor:
             at the cost of memory.
             Set to False if memory is limited,
             but note that pattern generation will be much slower.
-        n_jobs (int): Number of worker processes for pattern search
-            (``-1`` uses all available CPU cores).
+        n_jobs (int): Number of worker processes for pattern search.
+            ``1`` (default) disables process-based parallel search and is the
+            safest option for script usage on spawn-based platforms.
+            ``-1`` uses all available CPU cores.
     """
 
     __slots__ = (
@@ -771,7 +773,7 @@ class Substitutor:
         no_dmat=const.DEFAULT_NO_DMAT,
         t_kind=const.DEFAULT_T_KIND,
         cache=None,  # "True", "False", "None" (default)
-        n_jobs=-1,  # Number of parallel jobs (-1 for all cores)
+        n_jobs=1,
     ):
         self._symprec = symprec
         self._angle_tolerance = angle_tolerance
@@ -2334,7 +2336,7 @@ class _PatternMaker:
         # Adaptive depth expansion: expand as deep as needed for good load balancing
         n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
         min_splits = max(n_cores * 8, 32)  # Target: 8x cores
-        max_depth = min(stop - 1, 10)  # Can expand up to stop-1, max 10
+        max_depth = min(stop - 1, 8)  # Can expand up to stop-1, max 8
         current_depth = 1 if not start else start
 
         logging.info(f"Initial: {len(initial_states)} subtrees, target: {min_splits}, max_depth: {max_depth}, stop: {stop}")
@@ -2540,7 +2542,7 @@ class _PatternMaker:
         # Adaptive depth expansion: expand as deep as needed for good load balancing
         n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
         min_splits = max(n_cores * 8, 32)  # Target: 8x cores
-        max_depth = min(stop - 1, 10)  # Can expand up to stop-1, max 10
+        max_depth = min(stop - 1, 8)  # Can expand up to stop-1, max 8
         current_depth = 1 if not start else start
 
         logging.info(f"Initial: {len(initial_states)} subtrees, target: {min_splits}, max_depth: {max_depth}, stop: {stop}")

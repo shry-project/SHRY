@@ -133,6 +133,7 @@ class _RunConfig:
     write_ewald: bool
     max_ewald: float | None
     no_write: bool
+    n_jobs: int
     no_dmat: bool
     t_kind: str
     no_cache: bool = False
@@ -199,9 +200,9 @@ def _prepare_structures(config: _RunConfig):
 
     sym_mode = getattr(structure, "properties", {}).get("_shry_symmetry_mode", "sg")
     if sym_mode == "msg":
-        print("[shry] Using MSG (magnetic symmetry)")
+        print("[shry] Using MSG (magnetic space group via spglib)")
     else:
-        print("[shry] Using SG (space-group symmetry)")
+        print("[shry] Using SG (space-group symmetry via spglib)")
 
     modified_structure = structure.copy()
     # Note: since we don't limit the allowable scaling_matrix,
@@ -215,6 +216,7 @@ def _build_substitutor(config: _RunConfig, modified_structure):
     cache = False if config.no_cache else None
     return Substitutor(
         modified_structure,
+        n_jobs=config.n_jobs,
         symprec=config.symprec,
         atol=config.atol,
         angle_tolerance=config.angle_tolerance,
@@ -248,6 +250,7 @@ class _ScriptHelper:
         write_ewald=const.DEFAULT_WRITE_EWALD,
         max_ewald=const.DEFAULT_MAX_EWALD,
         no_write=const.DEFAULT_NO_WRITE,
+        n_jobs=1,
         no_dmat=const.DEFAULT_NO_DMAT,
         no_cache=False,
         t_kind=const.DEFAULT_T_KIND,
@@ -275,6 +278,7 @@ class _ScriptHelper:
             write_ewald=write_ewald,
             max_ewald=max_ewald,
             no_write=no_write,
+            n_jobs=n_jobs,
             no_dmat=no_dmat,
             t_kind=t_kind,
             no_cache=no_cache,

@@ -5,9 +5,11 @@
 Basic use: read a CIF file and
 write the substituted CIFs with weight.
 """
+
 import os
 from pymatgen.core import Structure
 from shry import Substitutor
+
 
 # Read a CIF file
 cif_file = "SmFe7Ti.cif"

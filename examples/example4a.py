@@ -30,4 +30,4 @@ for i, packet in enumerate(substitutor.quantities(("cifwriter", "weight"))):
 
 # Save pattern makers for later use.
 with open("pg.pkl", "wb") as f:
-    pickle.dump(substitutor._pattern_makers, f)
+    pickle.dump(substitutor.pattern_makers, f)

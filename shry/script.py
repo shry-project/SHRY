@@ -320,6 +320,7 @@ def _main():  # pylint: disable=missing-function-docstring
             write_ewald=args.write_ewald,
             max_ewald=args.max_ewald,
             no_write=args.no_write,
+            n_jobs=-1,
             no_dmat=args.no_dmat,
             t_kind=args.t_kind,
         )
