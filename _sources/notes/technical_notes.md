@@ -100,13 +100,7 @@ To verify the reliability of SHRY, rigorous validation tests were conducted as d
 
 These tests confirm that SHRY correctly enumerates symmetry-inequivalent structures without missing any candidates or generating duplicates.
 
-### Performance
-As a Python-based tool, SHRY overhead is higher than optimized codes with a compiled language. However, the algorithm scales linearly:
-*   **Small $N$** ($< 10^4$ structures): Dominated by Python startup and symmetry detection overhead (~1-2 seconds).
-*   **Large $N$** ($> 10^6$ structures): Scales linearly with the number of unique structures.
+### Symmetry Detection
 
-Validation against other codes (Supercell, Disorder Tool) has confirmed that SHRY produces identical sets of unique structures (zero deficiency, zero redundancy).
+SHRY's symmetry detection relies on `spglib`, a crystal symmetry identification tool widely recognized for its numerical robustness. `spglib` implements both the ordinary space groups (230) and magnetic space groups (1651) [as known as Shubnikov groups], and SHRY supports both.
 
-## Future Development
-*   **Parallelization**: The current implementation is single-threaded. Canonical Augmentation is naturally parallelizable (different branches of the tree can be explored independently).
-*   **Magnetic Structures**: Extending support to Shubnikov groups to handle magnetic spin configurations (up/down).

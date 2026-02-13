@@ -323,13 +323,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shry">shry</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-positional-arguments">Positional Arguments</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-structure-modification">structure modification</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-input-and-output">input and output</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-run-configuration">run configuration</a></li>
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shry">shry</a></li>
 </ul>
             </nav>
         </div>
@@ -346,111 +340,6 @@ document.write(`
 <section id="shry">
 <span id="api-cli-ref"></span><h2>shry<a class="headerlink" href="#shry" title="Link to this heading">#</a></h2>
 <p>SHRY command line interface.</p>
-<p><p>Quick use: <cite>shry STRUCTURE_CIF</cite>. See <cite>shry -h</cite> for more options.</p>
-</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">shry</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">from</span><span class="o">-</span><span class="n">species</span> <span class="p">[</span><span class="n">FROM_SPECIES</span> <span class="o">...</span><span class="p">]]</span>
-            <span class="p">[</span><span class="o">--</span><span class="n">to</span><span class="o">-</span><span class="n">species</span> <span class="p">[</span><span class="n">TO_SPECIES</span> <span class="o">...</span><span class="p">]]</span>
-            <span class="p">[</span><span class="o">--</span><span class="n">scaling</span><span class="o">-</span><span class="n">matrix</span> <span class="p">[</span><span class="n">SCALING_MATRIX</span> <span class="o">...</span><span class="p">]]</span> <span class="p">[</span><span class="o">--</span><span class="n">count</span><span class="o">-</span><span class="n">only</span><span class="p">]</span>
-            <span class="p">[</span><span class="o">--</span><span class="n">mod</span><span class="o">-</span><span class="n">only</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">write</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">dir</span><span class="o">-</span><span class="n">size</span> <span class="n">DIR_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">symm</span><span class="p">]</span>
-            <span class="p">[</span><span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">ewald</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">symmetrize</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">ewald</span> <span class="n">MAX_EWALD</span><span class="p">]</span>
-            <span class="p">[</span><span class="o">--</span><span class="n">symprec</span> <span class="n">SYMPREC</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">atol</span> <span class="n">ATOL</span><span class="p">]</span>
-            <span class="p">[</span><span class="o">--</span><span class="n">angle</span><span class="o">-</span><span class="n">tolerance</span> <span class="n">ANGLE_TOLERANCE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">sample</span> <span class="n">SAMPLE</span><span class="p">]</span>
-            <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">disable</span><span class="o">-</span><span class="n">progressbar</span><span class="p">]</span>
-            <span class="nb">input</span>
-</pre></div>
-</div>
-<section id="shry.script-get_parser-positional-arguments">
-<h3>Positional Arguments<a class="headerlink" href="#shry.script-get_parser-positional-arguments" title="Link to this heading">#</a></h3>
-<dl class="option-list">
-<dt><kbd>input</kbd></dt>
-<dd><p>A CIF, or an <cite>*.ini</cite> containing command line options as keys.
-If using <cite>*.ini</cite>, write all keys under <cite>DEFAULT</cite> section (See <cite>$SHRY_INSTALLDIR/examples</cite>)</p>
-</dd>
-</dl>
-</section>
-<section id="shry.script-get_parser-structure-modification">
-<h3>structure modification<a class="headerlink" href="#shry.script-get_parser-structure-modification" title="Link to this heading">#</a></h3>
-<dl class="option-list">
-<dt><kbd>--from-species, -f</kbd></dt>
-<dd><p>Replace FROM_SPECIES from the CIF file into TO_SPECIES. Matches either <cite>_atom_site_label</cite> or <cite>atom_site_type_symbol</cite>. Use comma or space (preferred) for multiple substitutions.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">()</span></code></p>
-</dd>
-<dt><kbd>--to-species, -t</kbd></dt>
-<dd><p>Final chemical formula of the replaced FROM_SPECIES. Accepts various formats for the concentration and oxidation states such as SmFe12, Sm0.5Fe0.5, Sm3+Sm2+2Fe3, etc. The number of entry must be the same as FROM_SPECIES.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">()</span></code></p>
-</dd>
-<dt><kbd>--scaling-matrix, -s</kbd></dt>
-<dd><p>Three (for diagonal supercells) or nine (for non-diagonal supercells) integers specifying the scaling matrix for constructing a supercell. One scalar value is also accepted, which is converted to three scalar values (e.g., 1 -&gt; 1 1 1)</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">'1</span> <span class="pre">1</span> <span class="pre">1'</span></code></p>
-</dd>
-</dl>
-</section>
-<section id="shry.script-get_parser-input-and-output">
-<h3>input and output<a class="headerlink" href="#shry.script-get_parser-input-and-output" title="Link to this heading">#</a></h3>
-<dl class="option-list">
-<dt><kbd>--count-only</kbd></dt>
-<dd><p>Enumerate the total number of ordered configurations from the given CIF and quit.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-<dt><kbd>--mod-only</kbd></dt>
-<dd><p>Write a modified CIF without generating the ordered structures.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-<dt><kbd>--no-write</kbd></dt>
-<dd><p>Generate ordered structures, but do not store them into disk.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-<dt><kbd>--dir-size</kbd></dt>
-<dd><p>Number of output CIFs written to each output directories.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">10000</span></code></p>
-</dd>
-<dt><kbd>--write-symm</kbd></dt>
-<dd><p>Write symmetries for all output CIFs (slower).</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-<dt><kbd>--write-ewald</kbd></dt>
-<dd><p>Write Ewald energy for all output CIFs.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-<dt><kbd>--symmetrize</kbd></dt>
-<dd><p>Use Wyckoff labels from a symmetry search to label the input CIF’s sites. By default, the label given within the CIF is used.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-<dt><kbd>--max-ewald</kbd></dt>
-<dd><p>Set maximum Ewald energy for the output CIFs</p>
-</dd>
-</dl>
-</section>
-<section id="shry.script-get_parser-run-configuration">
-<h3>run configuration<a class="headerlink" href="#shry.script-get_parser-run-configuration" title="Link to this heading">#</a></h3>
-<dl class="option-list">
-<dt><kbd>--symprec</kbd></dt>
-<dd><p>Symmetry search precision (simulation cell fraction).</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">0.01</span></code></p>
-</dd>
-<dt><kbd>--atol</kbd></dt>
-<dd><p>Discretization absolute tolerance (angstrom).</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">1e-05</span></code></p>
-</dd>
-<dt><kbd>--angle-tolerance</kbd></dt>
-<dd><p>Symmetry search angle tolerance (degrees).</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">5.0</span></code></p>
-</dd>
-<dt><kbd>--sample</kbd></dt>
-<dd><p>Sample N number of ordered structures.</p>
-</dd>
-<dt><kbd>--seed</kbd></dt>
-<dd><p>Random seed for the random number generator. Used only when –sample is set. Defaults to the (integer rounded) unixtime.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">1770005113</span></code></p>
-</dd>
-<dt><kbd>--disable-progressbar</kbd></dt>
-<dd><p>Disable progress bar. May stabilize longer runs.</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-</dl>
-</section>
-<p><p>SHRY version 0.1.dev1</p>
-</p>
 </section>
 </section>
 
@@ -499,13 +388,7 @@ If using <cite>*.ini</cite>, write all keys under <cite>DEFAULT</cite> section (
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shry">shry</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-positional-arguments">Positional Arguments</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-structure-modification">structure modification</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-input-and-output">input and output</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shry.script-get_parser-run-configuration">run configuration</a></li>
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shry">shry</a></li>
 </ul>
   </nav></div>
 

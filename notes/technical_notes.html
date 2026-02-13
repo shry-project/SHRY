@@ -339,10 +339,9 @@ document.write(`
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-test">Validation Test</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#intra-software-and-inter-software-checks">Intra-software and Inter-software Checks</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symmetry-detection">Symmetry Detection</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#future-development">Future Development</a></li>
 </ul>
             </nav>
         </div>
@@ -463,22 +462,10 @@ DOI: <a class="reference external" href="https://doi.org/10.1021/acs.jcim.2c0038
 </ol>
 <p>These tests confirm that SHRY correctly enumerates symmetry-inequivalent structures without missing any candidates or generating duplicates.</p>
 </section>
-<section id="performance">
-<h3>Performance<a class="headerlink" href="#performance" title="Link to this heading">#</a></h3>
-<p>As a Python-based tool, SHRY overhead is higher than optimized codes with a compiled language. However, the algorithm scales linearly:</p>
-<ul class="simple">
-<li><p><strong>Small <span class="math notranslate nohighlight">\(N\)</span></strong> (<span class="math notranslate nohighlight">\(&lt; 10^4\)</span> structures): Dominated by Python startup and symmetry detection overhead (~1-2 seconds).</p></li>
-<li><p><strong>Large <span class="math notranslate nohighlight">\(N\)</span></strong> (<span class="math notranslate nohighlight">\(&gt; 10^6\)</span> structures): Scales linearly with the number of unique structures.</p></li>
-</ul>
-<p>Validation against other codes (Supercell, Disorder Tool) has confirmed that SHRY produces identical sets of unique structures (zero deficiency, zero redundancy).</p>
+<section id="symmetry-detection">
+<h3>Symmetry Detection<a class="headerlink" href="#symmetry-detection" title="Link to this heading">#</a></h3>
+<p>SHRY’s symmetry detection relies on <code class="docutils literal notranslate"><span class="pre">spglib</span></code>, a crystal symmetry identification tool widely recognized for its numerical robustness. <code class="docutils literal notranslate"><span class="pre">spglib</span></code> implements both the ordinary space groups (230) and magnetic space groups (1651) [as known as Shubnikov groups], and SHRY supports both.</p>
 </section>
-</section>
-<section id="future-development">
-<h2>Future Development<a class="headerlink" href="#future-development" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p><strong>Parallelization</strong>: The current implementation is single-threaded. Canonical Augmentation is naturally parallelizable (different branches of the tree can be explored independently).</p></li>
-<li><p><strong>Magnetic Structures</strong>: Extending support to Shubnikov groups to handle magnetic spin configurations (up/down).</p></li>
-</ul>
 </section>
 </section>
 
@@ -541,10 +528,9 @@ DOI: <a class="reference external" href="https://doi.org/10.1021/acs.jcim.2c0038
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-test">Validation Test</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#intra-software-and-inter-software-checks">Intra-software and Inter-software Checks</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symmetry-detection">Symmetry Detection</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#future-development">Future Development</a></li>
 </ul>
   </nav></div>
 

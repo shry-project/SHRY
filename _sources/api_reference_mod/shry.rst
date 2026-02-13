@@ -4,6 +4,14 @@ shry package
 Submodules
 ----------
 
+shry.cif\_io module
+-------------------
+
+.. automodule:: shry.cif_io
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 shry.const module
 -----------------
 
@@ -24,6 +32,14 @@ shry.main module
 ----------------
 
 .. automodule:: shry.main
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+shry.patches module
+-------------------
+
+.. automodule:: shry.patches
    :members:
    :show-inheritance:
    :undoc-members:
