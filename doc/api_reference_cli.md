@@ -9,6 +9,6 @@ SHRY command line interface.
 ```{eval-rst}
 .. argparse::
    :module: shry.script
-   :func: get_parser
+   :func: _get_parser
    :prog: shry
 ```
