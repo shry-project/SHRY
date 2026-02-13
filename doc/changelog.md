@@ -2,9 +2,9 @@
 
 # Change Log
 
-## v1.2.0b1
+## v1.2.0b2
 
-*   **magCIF / MSG support (experimental)**: `.mcif` inputs now parse magCIF symmetry operations and `_atom_site_moment.*` into `Structure` site properties, and switch symmetry handling to spglib's magnetic symmetry (MSG). `.cif` inputs continue to use conventional space-group symmetry (SG).
+*   **magCIF / MSG support**: `.mcif` inputs now parse magCIF symmetry operations and `_atom_site_moment.*` into `Structure` site properties, and switch symmetry handling to spglib's magnetic symmetry (MSG). `.cif` inputs continue to use conventional space-group symmetry (SG).
 
 *   **Parallel tree search**: Tree search now supports dynamic parallel execution using Python `multiprocessing`.
     *   Added `n_jobs` parameter to `Substitutor` and `PatternMaker` classes (default: `-1`, uses all CPU cores)
