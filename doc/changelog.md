@@ -17,7 +17,7 @@
 
 ### Internal Changes
 
-*   **CIF reader backend update**: Replaced CIF read path from `pymatgen.io.cif` to `PyCifRW` (`CifFile`) for CIF parsing.
+*   **CIF reader/writer backend update**: Replaced CIF read/write path from `pymatgen.io.cif` to `PyCifRW` (`CifFile`).
 
 *   **Refactored symmetry detection**: Changed from pymatgen's internal `SpacegroupAnalyzer` to direct `spglib` calls for improved transparency and control over symmetry operations.
     *   Added helper functions: `structure_to_spglib_cell()`, `get_symmetry_operations_from_spglib()`, and `get_symmetrized_structure_from_spglib()`
