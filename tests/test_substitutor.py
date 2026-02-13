@@ -440,9 +440,45 @@ def _run_redundancy_check(configs, structure, msg_mode: bool):
 # ============================================================================
 
 
-def test_count_intra_consistency_SG(_benchmark_data):
-    """Test that Substitutor.count() matches the actual number of generated structures."""
+def test_count_inter_consistency_SG(_benchmark_data):
+    """Test that Substitutor.count() matches SG benchmark equivalent-structure counts."""
     for test_case in _benchmark_data:
+        cif_file = test_case["cif_file"]
+        supercell_array = test_case["supercell_array"]
+        expected_count = test_case["expected_count"]
+
+        if not os.path.exists(cif_file):
+            pytest.skip(f"File not found: {cif_file}")
+
+        if expected_count is None:
+            pytest.skip(f"No benchmark count available for: {cif_file}")
+
+        s, structure, error = _create_substitutor(cif_file, supercell_array)
+        if error:
+            pytest.skip(f"{error['status']}: {error['error']}")
+
+        count_obtained = s.count()
+        assert count_obtained == expected_count, (
+            f"Benchmark mismatch for {test_case['file_basename']}: "
+            f"Substitutor.count()={count_obtained}, benchmark={expected_count}"
+        )
+
+
+@pytest.mark.skip(reason="Not implemented yet")
+def test_count_inter_consistency_MSG():
+    """Test that Substitutor.count() matches MSG benchmark equivalent-structure counts."""
+    pass
+
+
+def test_count_intra_consistency_SG(_benchmark_data, pytestconfig):
+    """Test that Substitutor.count() matches the actual number of generated structures."""
+    option_value = pytestconfig.getoption("--SG-redundancy")
+    if str(option_value).strip().lower() in {"", "0", "off", "false", "none"}:
+        pytest.skip("--SG-redundancy is disabled (set --SG-redundancy=N or all)")
+
+    selected_cases = _select_redundancy_cases(_benchmark_data, option_value, "--SG-redundancy")
+
+    for test_case in selected_cases:
         cif_file = test_case["cif_file"]
         supercell_array = test_case["supercell_array"]
 
@@ -468,30 +504,6 @@ def test_count_intra_consistency_SG(_benchmark_data):
         # Check consistency
         assert count_expected == count_actual, (
             f"Count mismatch: Substitutor.count()={count_expected}, but generated {count_actual}"
-        )
-
-
-def test_count_inter_consistency_SG(_benchmark_data):
-    """Test that Substitutor.count() matches SG benchmark equivalent-structure counts."""
-    for test_case in _benchmark_data:
-        cif_file = test_case["cif_file"]
-        supercell_array = test_case["supercell_array"]
-        expected_count = test_case["expected_count"]
-
-        if not os.path.exists(cif_file):
-            pytest.skip(f"File not found: {cif_file}")
-
-        if expected_count is None:
-            pytest.skip(f"No benchmark count available for: {cif_file}")
-
-        s, structure, error = _create_substitutor(cif_file, supercell_array)
-        if error:
-            pytest.skip(f"{error['status']}: {error['error']}")
-
-        count_obtained = s.count()
-        assert count_obtained == expected_count, (
-            f"Benchmark mismatch for {test_case['file_basename']}: "
-            f"Substitutor.count()={count_obtained}, benchmark={expected_count}"
         )
 
 
@@ -524,6 +536,34 @@ def test_no_redundancy_SG(pytestconfig):
             pytest.fail("Failed to generate structures")
 
         _run_redundancy_check(configs, structure, msg_mode=False)
+
+
+def test_count_intra_consistency_MSG(magnetic_benchmark_data, pytestconfig):
+    """Test that MSG Substitutor.count() matches the number of generated structures."""
+    option_value = pytestconfig.getoption("--MSG-redundancy")
+    selected_cases = _select_redundancy_cases(magnetic_benchmark_data, option_value, "--MSG-redundancy")
+
+    for magnetic_test_case in selected_cases:
+        cif_file = magnetic_test_case["cif_file"]
+
+        if not os.path.exists(cif_file):
+            pytest.skip(f"File not found: {cif_file}")
+
+        s, structure, error = _create_substitutor(cif_file, supercell_array=None)
+        if error:
+            pytest.skip(f"{error['status']}: {error['error']}")
+
+        count_expected = s.count()
+
+        configs = _generate_all_structures(s)
+        if configs is None:
+            pytest.fail("Failed to generate structures")
+
+        count_actual = len(configs)
+        assert count_expected == count_actual, (
+            f"MSG count mismatch for {magnetic_test_case['file_basename']}: "
+            f"Substitutor.count()={count_expected}, but generated {count_actual}"
+        )
 
 
 def test_no_redundancy_MSG(magnetic_benchmark_data, pytestconfig):
