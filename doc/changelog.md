@@ -2,7 +2,7 @@
 
 # Change Log
 
-## v1.2.0a2
+## v1.2.0b1
 
 *   **magCIF / MSG support (experimental)**: `.mcif` inputs now parse magCIF symmetry operations and `_atom_site_moment.*` into `Structure` site properties, and switch symmetry handling to spglib's magnetic symmetry (MSG). `.cif` inputs continue to use conventional space-group symmetry (SG).
 
