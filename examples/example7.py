@@ -12,14 +12,25 @@ So the smallest weight corresponds to the highest symmetry.
 import os
 from heapq import heappush, heapreplace
 
+from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from shry import ScriptHelper
+from shry import _ScriptHelper
+
+
+def _to_plain_structure(structure):
+    """Drop site properties so SpacegroupAnalyzer can hash/cache safely."""
+    return Structure(
+        lattice=structure.lattice,
+        species=structure.species,
+        coords=structure.frac_coords,
+        coords_are_cartesian=False,
+    )
 
 
 cif_file = "PbSnTe.cif"  # Replace with your CIF if desired
 
-helper = ScriptHelper(
+helper = _ScriptHelper(
     structure_file=cif_file,
     from_species=("Sn",),
     to_species=("Sn0.25Sb0.75",),
@@ -46,7 +57,8 @@ os.makedirs(output_dir, exist_ok=True)
 
 for rank, (neg_weight, idx, structure) in enumerate(sorted(lowest, key=lambda t: -t[0])):
     weight = -neg_weight
-    sga = SpacegroupAnalyzer(structure)
+    plain_structure = _to_plain_structure(structure)
+    sga = SpacegroupAnalyzer(plain_structure)
     sg_number = sga.get_space_group_number()
     sg_symbol = sga.get_space_group_symbol().replace("/", "_")
     filename = os.path.join(
@@ -67,7 +79,8 @@ if WRITE_ALL_SORTED:
     structures.sort(key=lambda t: t[0])
 
     for rank, (weight, idx, structure) in enumerate(structures):
-        sga = SpacegroupAnalyzer(structure)
+        plain_structure = _to_plain_structure(structure)
+        sga = SpacegroupAnalyzer(plain_structure)
         sg_number = sga.get_space_group_number()
         sg_symbol = sga.get_space_group_symbol().replace("/", "_")
         filename = os.path.join(

@@ -25,7 +25,7 @@ except (ModuleNotFoundError, ImportError):
     shry_version = "unknown (not installed)"
 
 
-def setup_tqdm_logging(level=logging.INFO, fmt="%(message)s"):
+def _setup_tqdm_logging(level=logging.INFO, fmt="%(message)s"):
     """
     Configure logging to work with tqdm without overwriting the progress bar.
     Returns a tuple needed to restore previous logging handlers.
@@ -55,7 +55,7 @@ def setup_tqdm_logging(level=logging.INFO, fmt="%(message)s"):
     return root, prev_handlers, prev_level
 
 
-def restore_logging(state):
+def _restore_logging(state):
     """
     Restore logging handlers and level from setup_tqdm_logging.
     """
@@ -64,7 +64,7 @@ def restore_logging(state):
     root.setLevel(prev_level)
 
 
-def print_header():
+def _print_header():
     """
     Print header text
     """
@@ -81,7 +81,7 @@ def print_header():
     logging.info(f"Begin {time_string} (unixtime: {const.DEFAULT_SEED})")
 
 
-def print_footer():
+def _print_footer():
     """
     Print footer text
     """
@@ -96,7 +96,9 @@ def print_footer():
     logging.info("J. Chem. Inf. Model. 62, 2909-2915 (2022)")
     logging.info("")
     logging.info("@article{doi:10.1021/acs.jcim.2c00389,")
-    logging.info("  author = {Prayogo, Genki and Tirelli, Andrea and Utimula, Keishu and Hongo, Kenta and Maezono, Ryo and Nakano, Kousuke},")
+    logging.info(
+        "  author = {Prayogo, Genki and Tirelli, Andrea and Utimula, Keishu and Hongo, Kenta and Maezono, Ryo and Nakano, Kousuke},"
+    )
     logging.info("  title = {SHRY: Application of Canonical Augmentation to the Atomic Substitution Problem},")
     logging.info("  journal = {J. Chem. Inf. Model.},")
     logging.info("  volume = {62},")
@@ -112,7 +114,8 @@ def print_footer():
     logging.info("Ends " + time_string)
     logging.info(const.HLINE)
 
-def get_parser():
+
+def _get_parser():
     parser = argparse.ArgumentParser(
         epilog=f"SHRY version {shry_version}",
         description="Quick use: `shry STRUCTURE_CIF`. See `shry -h` for more options.",
@@ -122,10 +125,7 @@ def get_parser():
     parser.add_argument(
         "input",
         type=str,
-        help=(
-            "A CIF containing command line options as keys.\n"
-            "(See `$SHRY_INSTALLDIR/examples`)"
-        ),
+        help=("A CIF containing command line options as keys.\n(See `$SHRY_INSTALLDIR/examples`)"),
     )
 
     group = parser.add_argument_group("structure modification")
@@ -270,20 +270,20 @@ def get_parser():
     return parser
 
 
-def main():  # pylint: disable=missing-function-docstring
-    parser = get_parser()
+def _main():  # pylint: disable=missing-function-docstring
+    parser = _get_parser()
     args = parser.parse_args()
     const.DISABLE_PROGRESSBAR = args.disable_progressbar
-    logging_state = setup_tqdm_logging()
+    logging_state = _setup_tqdm_logging()
     try:
         # Print header first for faster perceived response
-        print_header()
+        _print_header()
 
         # Late patch for count/mod/nowrite
         if args.count_only:
             args.no_write = True
 
-        from .main import ScriptHelper  # pylint:disable=import-outside-toplevel
+        from .main import _ScriptHelper  # pylint:disable=import-outside-toplevel
 
         # Trick to allow ",", ";", and whiteline as separator
         from_species = const.FLEXIBLE_SEPARATOR.split(",".join(args.from_species))
@@ -304,7 +304,7 @@ def main():  # pylint: disable=missing-function-docstring
         to_species = list(filter(None, to_species))
         # scaling_matrix = list(filter(None, scaling_matrix)) #here! the problem is that filter removes 0!
 
-        helper = ScriptHelper(
+        helper = _ScriptHelper(
             structure_file=args.input,
             from_species=from_species,
             to_species=to_species,
@@ -320,6 +320,7 @@ def main():  # pylint: disable=missing-function-docstring
             write_ewald=args.write_ewald,
             max_ewald=args.max_ewald,
             no_write=args.no_write,
+            n_jobs=-1,
             no_dmat=args.no_dmat,
             t_kind=args.t_kind,
         )
@@ -327,10 +328,10 @@ def main():  # pylint: disable=missing-function-docstring
         helper.save_modified_structure()
         if not args.count_only and not args.mod_only:
             helper.write()
-        print_footer()
+        _print_footer()
     finally:
-        restore_logging(logging_state)
+        _restore_logging(logging_state)
 
 
 if __name__ == "__main__":
-    main()
+    _main()

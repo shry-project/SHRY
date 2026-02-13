@@ -4,6 +4,7 @@
 """
 Load saved Substitutor instance for further substitution.
 """
+
 import pickle
 import os
 

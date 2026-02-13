@@ -34,7 +34,9 @@ from pymatgen.core import Structure
 
 # shry modules
 from . import const
-from .patches import apply_pymatgen_patches
+from .patches import _apply_pymatgen_patches
+from .cif_io import _structure_to_mcif_string
+from .cif_io import _structure_to_mcif_string
 from .cif_io import parse_cif_string_to_structure
 
 # shry version control
@@ -49,7 +51,7 @@ np.set_printoptions(linewidth=1000, threshold=sys.maxsize)
 
 spglib.OLD_ERROR_HANDLING = False
 
-apply_pymatgen_patches()
+_apply_pymatgen_patches()
 
 
 # Global variables for multiprocessing workers
@@ -280,7 +282,7 @@ def _worker_search_invar(args):
     return results
 
 
-def structure_to_spglib_cell(structure):
+def _structure_to_spglib_cell(structure):
     """
     Convert pymatgen Structure to spglib cell tuple.
 
@@ -308,7 +310,118 @@ def structure_to_spglib_cell(structure):
     return (lattice, positions, numbers)
 
 
-def get_symmetry_operations_from_spglib(structure, symprec=1e-5, angle_tolerance=-1.0):
+def _structure_requests_msg(structure) -> bool:
+    """Return True if the Structure should use magnetic symmetry (MSG)."""
+    props = getattr(structure, "properties", None) or {}
+    mode = props.get("_shry_symmetry_mode")
+    if mode is not None:
+        return mode == "msg"
+    # Fallback (option a): if magnetic moments are present, use MSG.
+    try:
+        if "magmom" in getattr(structure, "site_properties", {}):
+            return True
+        for site in structure:
+            mm = site.properties.get("magmom")
+            if mm is not None and not np.allclose(np.array(mm, dtype=float), 0.0):
+                return True
+    except Exception:
+        pass
+    return False
+
+
+class _StringWriter:
+    """Minimal writer wrapper compatible with ScriptHelper.write (needs __str__)."""
+
+    def __init__(self, text: str):
+        self._text = text
+
+    def __str__(self) -> str:
+        return self._text
+
+
+def _structure_to_spglib_msg_cell(structure):
+    """Convert pymatgen Structure to spglib MsgCell tuple.
+
+    spglib>=2 uses MsgCell = (lattice, positions, numbers, magmoms).
+    magmoms is passed as a (N, 3) array (crystal axis components).
+
+    Notes:
+        - For disordered sites, we choose a representative atomic number
+        (highest occupancy; tie-broken deterministically).
+        - Magnetic moments are taken from site.properties['magmom'] if present;
+        otherwise from site.properties['_atom_site_moment_by_label'] (first nonzero);
+        otherwise zeros.
+    """
+
+    lattice = structure.lattice.matrix
+    positions = np.array([site.frac_coords for site in structure])
+
+    numbers = []
+    magmoms = []
+
+    for site in structure:
+        # Representative atomic number
+        if site.is_ordered:
+            rep_specie = site.specie
+        else:
+            # Choose the majority-occupancy specie deterministically.
+            items = list(site.species.items())
+            # items: [(Element/Specie, occ), ...]
+            items.sort(key=lambda t: (-float(t[1]), str(getattr(t[0], "symbol", t[0]))))
+            rep_specie = items[0][0]
+        try:
+            numbers.append(int(rep_specie.Z))
+        except Exception:
+            numbers.append(int(list(site.species.keys())[0].Z))
+
+        # Representative magnetic moment
+        mm = site.properties.get("magmom")
+        if mm is None:
+            mom_map = site.properties.get("_atom_site_moment_by_label") or {}
+            mm = next(
+                (np.array(v, dtype=float) for v in mom_map.values() if not np.allclose(np.array(v, dtype=float), 0.0)),
+                np.zeros(3, dtype=float),
+            )
+        mm = np.array(mm, dtype=float)
+        if mm.shape == ():  # scalar -> treat as x-component
+            mm = np.array([float(mm), 0.0, 0.0], dtype=float)
+        elif mm.shape != (3,):
+            mm = np.zeros(3, dtype=float)
+        magmoms.append(mm)
+
+    numbers = np.array(numbers, dtype=int)
+    magmoms = np.array(magmoms, dtype=float)
+    return (lattice, positions, numbers, magmoms)
+
+
+def _get_magnetic_symmetry_operations_from_spglib(
+    structure,
+    symprec=1e-5,
+    angle_tolerance=-1.0,
+):
+    """Get magnetic symmetry operations (MSG) from spglib.
+
+    Returns a list of pymatgen SymmOp for coordinate mapping.
+    Time-reversal flags are handled internally by spglib and are not
+    encoded in SymmOp.
+    """
+    from pymatgen.core.operations import SymmOp
+
+    cell = _structure_to_spglib_msg_cell(structure)
+    symmetry = spglib.get_magnetic_symmetry(cell, symprec=symprec, angle_tolerance=angle_tolerance)
+    if symmetry is None:
+        raise RuntimeError("Couldn't find magnetic symmetry.")
+
+    symmops = []
+    for rotation, translation in zip(symmetry["rotations"], symmetry["translations"], strict=False):
+        affine_matrix = np.eye(4)
+        affine_matrix[:3, :3] = rotation
+        affine_matrix[:3, 3] = translation
+        symmops.append(SymmOp(affine_matrix))
+    return symmops
+
+
+def _get_symmetry_operations_from_spglib(structure, symprec=1e-5, angle_tolerance=-1.0):
     """
     Get symmetry operations from spglib.
 
@@ -322,7 +435,7 @@ def get_symmetry_operations_from_spglib(structure, symprec=1e-5, angle_tolerance
     """
     from pymatgen.core.operations import SymmOp
 
-    cell = structure_to_spglib_cell(structure)
+    cell = _structure_to_spglib_cell(structure)
     symmetry = spglib.get_symmetry(cell, symprec=symprec, angle_tolerance=angle_tolerance)
 
     if symmetry is None:
@@ -340,7 +453,7 @@ def get_symmetry_operations_from_spglib(structure, symprec=1e-5, angle_tolerance
     return symmops
 
 
-class PatchedSymmetrizedStructure(SymmetrizedStructure):
+class _PatchedSymmetrizedStructure(SymmetrizedStructure):
     """
     Fixed site_properties display
     """
@@ -383,7 +496,7 @@ class PatchedSymmetrizedStructure(SymmetrizedStructure):
         return "\n".join(outs)
 
 
-def get_symmetrized_structure_from_spglib(structure, symprec=1e-5, angle_tolerance=-1.0):
+def _get_symmetrized_structure_from_spglib(structure, symprec=1e-5, angle_tolerance=-1.0):
     """
     Get symmetrized structure using spglib directly.
 
@@ -395,14 +508,14 @@ def get_symmetrized_structure_from_spglib(structure, symprec=1e-5, angle_toleran
     Returns:
         PatchedSymmetrizedStructure object
     """
-    cell = structure_to_spglib_cell(structure)
+    cell = _structure_to_spglib_cell(structure)
     dataset = spglib.get_symmetry_dataset(cell, symprec=symprec, angle_tolerance=angle_tolerance)
 
     if dataset is None:
         raise RuntimeError("Couldn't find symmetry.")
 
     # Get symmetry operations
-    symmops = get_symmetry_operations_from_spglib(structure, symprec, angle_tolerance)
+    symmops = _get_symmetry_operations_from_spglib(structure, symprec, angle_tolerance)
 
     # Create SpacegroupOperations object
     sg = SpacegroupOperations(
@@ -411,10 +524,10 @@ def get_symmetrized_structure_from_spglib(structure, symprec=1e-5, angle_toleran
         symmops,
     )
 
-    return PatchedSymmetrizedStructure(structure, sg, dataset.equivalent_atoms, dataset.wyckoffs)
+    return _PatchedSymmetrizedStructure(structure, sg, dataset.equivalent_atoms, dataset.wyckoffs)
 
 
-class AltCifBlock(CifBlock):
+class _AltCifBlock(CifBlock):
     """
     CifBlock but optimized for when there are
     many, slightly different blocks:
@@ -531,14 +644,14 @@ class TooBigError(Exception):
     ...
 
 
-def rec_asc(a, n, m, k, length):
+def _rec_asc(a, n, m, k, length):
     """
     Recursive part of the thing below
     """
     x = m
     while 2 * x <= n and k < length:
         a[k - 1] = x
-        yield from rec_asc(a, n - x, x, k + 1, length)
+        yield from _rec_asc(a, n - x, x, k + 1, length)
         x += 1
     a[k - 1] = n
     # Pad
@@ -550,18 +663,18 @@ def rec_asc(a, n, m, k, length):
 
 
 @functools.lru_cache(None)
-def aR_array(n, length=None):
+def _aR_array(n, length=None):
     """
     aR() cache.
     """
     a = [1] * n
     if length is None:
         length = n
-    return np.array(list(rec_asc(a, n, 1, 1, length)))
+    return np.array(list(_rec_asc(a, n, 1, 1, length)))
 
 
 @functools.lru_cache(None)
-def multinomial_coeff(a):
+def _multinomial_coeff(a):
     """
     Get multinomial coefficient of (sum(a), (a_1, a_2, ...))
     """
@@ -573,7 +686,7 @@ def multinomial_coeff(a):
 
 class Substitutor:
     """
-    Makes unique ordered Structure(s) for the given disorder Structure.
+    Enumerate symmetrically unique ordered structures from a disordered structure.
 
     Since the PatternMaker instances are saved,
     it is advantageous to reuse the same Substitutor
@@ -582,10 +695,18 @@ class Substitutor:
     This includes different subsitute concentrations
     from the same basic structure, among others.
 
+    Attributes:
+        disorder_groups (dict): Mapping of grouping key (orbit identifier) to
+            tuples of disordered ``PeriodicSite`` objects that are substituted
+            together.
+
     Args:
-        structure (pymatgen.Structure): Input structure.
+        structure (pymatgen.core.Structure or shry.LabeledStructure):
+            Input structure. Both plain pymatgen Structure and SHRY LabeledStructure
+            instances are supported.
         symprec (float): Symmetry precision.
         angle_tolerance (float): Angle tolerance for symmetry search.
+        atol (float): Absolute tolerance used in internal floating-point comparisons.
         groupby (function): Function to group disordered sites.
             Defaults to lambda x: x.properties["_atom_site_label"], with the x loops
             over all PeriodicSites within the Structure.
@@ -594,16 +715,21 @@ class Substitutor:
             a certain species or crystallographic orbit to be subsituted together?
 
             Fallback to crystallographic orbit when failed.
-        sample (int): Randomly sample the generated structures.
+        shuffle (bool): If True, randomize branch traversal order during pattern search.
+        seed (int): Random seed used when ``shuffle=True``.
         no_dmat (bool): Whether or not to use distance matrix as
             permutation invariant (faster, default=True)
-        t_kind (): (to be written)
+        t_kind (str): Invariant mode used by PatternMaker (e.g. ``sum``, ``plsum``, ``det``).
         cache (bool or None): By default(=None), cache patterns when involving either
             multiple orbits or multiple species, but otherwise don't.
             Caching allows "reuse" of previously generated patterns,
             at the cost of memory.
             Set to False if memory is limited,
             but note that pattern generation will be much slower.
+        n_jobs (int): Number of worker processes for pattern search.
+            ``1`` (default) disables process-based parallel search and is the
+            safest option for script usage on spawn-based platforms.
+            ``-1`` uses all available CPU cores.
     """
 
     __slots__ = (
@@ -624,7 +750,7 @@ class Substitutor:
         "_group_bit_perm",
         "_structure",
         "_sample",
-        "cache",
+        "_cache",
         "_no_dmat",
         "_t_kind",
         "_segmenter",
@@ -647,7 +773,7 @@ class Substitutor:
         no_dmat=const.DEFAULT_NO_DMAT,
         t_kind=const.DEFAULT_T_KIND,
         cache=None,  # "True", "False", "None" (default)
-        n_jobs=-1,  # Number of parallel jobs (-1 for all cores)
+        n_jobs=1,
     ):
         self._symprec = symprec
         self._angle_tolerance = angle_tolerance
@@ -670,10 +796,10 @@ class Substitutor:
         rg.seed(self._seed)
         self._rg = rg
 
-        self.cache = cache
+        self._cache = cache
         self._symmops = None
         self._pms = dict()
-        self._get_polya = get_polya
+        self._get_polya = _get_polya
 
         self.disorder_groups = dict()
         self._group_dmat = dict()
@@ -690,25 +816,45 @@ class Substitutor:
     @property
     def structure(self):
         """
-        Input Structure containing disorder sites
+        Input structure currently held by this Substitutor.
+
+        Returns:
+            pymatgen.core.Structure: Internal working copy of the input structure.
         """
         return self._structure
 
     @property
     def groupby(self):
         """
-        Function used to divide disorder sites
+        Grouping function used to partition disorder sites into substitution orbits.
+
+        Returns:
+            Callable: Function that maps each PeriodicSite to a grouping key.
         """
         return self._groupby
 
     @groupby.setter
     def groupby(self, groupby):
+        """Set grouping function and rebuild disorder grouping metadata.
+
+        Args:
+            groupby (Callable): Function mapping each PeriodicSite to a grouping key.
+        """
         self._groupby = groupby
         # Reload division part
         self.structure = self.structure
 
     @structure.setter
     def structure(self, structure):
+        """Set input structure and rebuild all symmetry/disorder derived caches.
+
+        Args:
+            structure (pymatgen.core.Structure): New input structure.
+
+        Raises:
+            RuntimeError: If symmetry cannot be determined or occupancy is invalid.
+            NeedSupercellError: If site multiplicities cannot fit integer composition.
+        """
         logging.info("\nSetting Substitutor with Structure")
         logging.info(f"{structure}")
 
@@ -725,29 +871,50 @@ class Substitutor:
         # Read.
         self._structure = structure.copy()
 
-        # Get spglib cell and symmetry dataset
-        cell = structure_to_spglib_cell(self._structure)
-        dataset = spglib.get_symmetry_dataset(cell, symprec=self._symprec, angle_tolerance=self._angle_tolerance)
+        # Get spglib cell and symmetry dataset (SG or MSG)
+        use_msg = _structure_requests_msg(self._structure)
+        logging.info("Using magnetic symmetry (MSG)" if use_msg else "Using crystallographic symmetry (SG)")
+        if use_msg:
+            cell = _structure_to_spglib_msg_cell(self._structure)
+            dataset = spglib.get_magnetic_symmetry_dataset(
+                cell,
+                symprec=self._symprec,
+                angle_tolerance=self._angle_tolerance,
+            )
+        else:
+            cell = _structure_to_spglib_cell(self._structure)
+            dataset = spglib.get_symmetry_dataset(cell, symprec=self._symprec, angle_tolerance=self._angle_tolerance)
 
         if dataset is None:
             raise RuntimeError("Couldn't find symmetry.")
 
         # Get symmetry operations
         try:
-            self._symmops = get_symmetry_operations_from_spglib(
-                self._structure, symprec=self._symprec, angle_tolerance=self._angle_tolerance
-            )
+            if use_msg:
+                self._symmops = _get_magnetic_symmetry_operations_from_spglib(
+                    self._structure, symprec=self._symprec, angle_tolerance=self._angle_tolerance
+                )
+            else:
+                self._symmops = _get_symmetry_operations_from_spglib(
+                    self._structure, symprec=self._symprec, angle_tolerance=self._angle_tolerance
+                )
         except Exception as exc:
             raise RuntimeError("Couldn't find symmetry.") from exc
 
-        logging.info(f"Space group: {dataset.hall} ({dataset.number})")
+        if use_msg:
+            uni_number = getattr(dataset, "uni_number", None)
+            msg_type = getattr(dataset, "msg_type", None)
+            logging.info(f"Magnetic space group: uni_number={uni_number}, msg_type={msg_type}")
+        else:
+            logging.info(f"Space group: {dataset.hall} ({dataset.number})")
         logging.info(f"Total {len(self._symmops)} symmetry operations")
 
-        # Get symmetrized structure for logging
-        symm_struct = get_symmetrized_structure_from_spglib(
-            self._structure, symprec=self._symprec, angle_tolerance=self._angle_tolerance
-        )
-        logging.info(symm_struct)
+        # Get symmetrized structure for logging (SG only)
+        if not use_msg:
+            symm_struct = _get_symmetrized_structure_from_spglib(
+                self._structure, symprec=self._symprec, angle_tolerance=self._angle_tolerance
+            )
+            logging.info(symm_struct)
 
         equivalent_atoms = dataset.equivalent_atoms
 
@@ -873,15 +1040,15 @@ class Substitutor:
 
         # If not explicitly set, turn on caching if there are multiple orbits/colors,
         # and turn off otherwise
-        if self.cache is None:
+        if self._cache is None:
             da = list(self._disorder_amounts().values())
             if not da:  # no disorder
                 pass
             else:
                 if len(da) > 1 or len(da[0]) > 2:
-                    self.cache = True
+                    self._cache = True
                 else:
-                    self.cache = False
+                    self._cache = False
 
         # Letter-related functions
         self._segmenter = self._disorder_amounts().values()
@@ -922,12 +1089,20 @@ class Substitutor:
     @property
     def pattern_makers(self):
         """
-        PatternMaker instances in key-value pairs with its label as key
+        Access cached PatternMaker instances.
+
+        Returns:
+            dict: Mapping from PatternMaker label to PatternMaker instance.
         """
         return self._pms
 
     @pattern_makers.setter
     def pattern_makers(self, pms):
+        """Replace cached PatternMaker instances.
+
+        Args:
+            pms (dict): Mapping from PatternMaker label to PatternMaker instance.
+        """
         self._pms = pms
 
     def _sorted_compositions(self):
@@ -960,10 +1135,12 @@ class Substitutor:
 
     def make_patterns(self):
         """
-        "Raw" pattern of the all disorder sites.
+        Generate raw substitution patterns for all disordered sites.
 
         Returns:
-            list: list of list of sites with a distinct species.
+            Iterator[tuple[np.ndarray, list[np.ndarray]]]:
+                Pairs of ``(aut, pattern)`` where ``aut`` is the automorphism index
+                array and ``pattern`` is the orbit-wise substitution index pattern.
         """
 
         def rscum(iterable):
@@ -977,7 +1154,7 @@ class Substitutor:
                 yield cum
 
         def nocache_get_pm(subperm, dmat):
-            pm = PatternMaker(
+            pm = _PatternMaker(
                 subperm,
                 invar=dmat,
                 enumerator_collection=self._get_polya,
@@ -991,17 +1168,17 @@ class Substitutor:
             return pm, row_map, index_map
 
         def cached_get_pm(subperm, dmat):
-            label = PatternMaker.get_label(subperm)
+            label = _PatternMaker.get_label(subperm)
             if label in self._pms:
                 pm = self._pms[label]
                 row_map, index_map = pm.update_index(subperm)
             else:
-                pm = PatternMaker(
+                pm = _PatternMaker(
                     subperm,
                     invar=dmat,
                     enumerator_collection=self._get_polya,
                     t_kind=self._t_kind,
-                    cache=self.cache,
+                    cache=self._cache,
                     shuffle=self._shuffle,
                     rg=self._rg,
                     n_jobs=self._n_jobs,
@@ -1060,7 +1237,7 @@ class Substitutor:
             raise TooBigError(f"({count} irreducible expected)")
 
         # To make the branches shallow.
-        if self.cache:
+        if self._cache:
             get_pm = cached_get_pm
         else:
             get_pm = nocache_get_pm
@@ -1075,14 +1252,20 @@ class Substitutor:
 
     def total_count(self):
         """
-        Total number of combinations.
+        Return the total number of combinatorial substitutions (without symmetry reduction).
+
+        Returns:
+            int: Total number of possible substitutions.
         """
-        ocount = (multinomial_coeff(x) for x in self._disorder_amounts().values())
+        ocount = (_multinomial_coeff(x) for x in self._disorder_amounts().values())
         return functools.reduce(lambda x, y: x * y, ocount, 1)
 
     def count(self):
         """
-        Final number of patterns.
+        Return the number of symmetry-inequivalent substitution patterns.
+
+        Returns:
+            int: Number of unique patterns after symmetry reduction.
         """
         logging.info(f"\nCounting unique patterns for {self.structure.formula}")
 
@@ -1099,12 +1282,17 @@ class Substitutor:
 
     def quantities(self, q, symprec=None):
         """
-        Mixed quantities generator.
-        Yield tuple of selected quantities.
+        Generate selected quantities for each symmetry-inequivalent configuration.
 
         Args:
-            q: (list) valid options: ("cifwriter", "weight", "letter", "ewald", "structure")
-                will return in this order.
+            q (list[str]): Keys to include in each yielded packet.
+                Valid keys are ``"cifwriter"``, ``"weight"``, ``"letter"``,
+                ``"ewald"``, and ``"structure"``.
+            symprec (float | None): Optional symmetry precision used for CIF/Ewald
+                generation in helper methods.
+
+        Yields:
+            dict: Dictionary containing requested quantities for one configuration.
         """
         is_c = "cifwriter" in q
         is_s = "structure" in q
@@ -1131,37 +1319,48 @@ class Substitutor:
 
     def letters(self):
         """
-        Substitution alphabet representation generator.
+        Generate letter-encoded substitution patterns.
 
-        Return:
-            dict: (tuple -> np.array) pairs of all pattern letters,
-                separated by (specified) orbit.
-
-                Each row of the array is a pattern for the key orbit.
+        Yields:
+            str: Compact letter string representing one substitution pattern.
         """
         for _, p in self.make_patterns():
             yield self._get_letters(p)
 
     def weights(self):
         """
-        Pattern weights generator.
+        Generate symmetry weights for all unique patterns.
 
-        Return:
-            list: List of weights of all patterns.
+        Yields:
+            int: Weight of one pattern (group-size divided by automorphism size).
         """
         for a, _ in self.make_patterns():
             yield self._get_weight(a)
 
     def cifwriters(self, symprec=None):
         """
-        Cifwriters generator.
+        Generate CIF writers (or magCIF string writers in MSG mode).
+
+        Args:
+            symprec (float | None): Optional symmetry precision used when building
+                symmetry-reduced CIF blocks.
+
+        Yields:
+            CifWriter | _StringWriter: Writer object for each configuration.
         """
         for _, p in self.make_patterns():
             yield self._get_cifwriter(p, symprec)
 
     def structure_writers(self, symprec=None):
         """
-        Pymatgen Structures generator.
+        Generate ordered pymatgen structures for all unique patterns.
+
+        Args:
+            symprec (float | None): Unused. Kept for API compatibility with other
+                writer generators.
+
+        Yields:
+            pymatgen.core.Structure: Ordered structure for each configuration.
         """
         # This one does not need symprec.
         # Just to keep the signature the same.
@@ -1170,6 +1369,14 @@ class Substitutor:
             yield self._get_structure(p)
 
     def ase_atoms_writers(self, symprec=None):
+        """Generate ASE Atoms objects for all unique patterns.
+
+        Args:
+            symprec (float | None): Unused. Kept for API compatibility.
+
+        Yields:
+            ase.Atoms: ASE representation of each ordered configuration.
+        """
         from ase import Atoms
 
         def _from_pymatgen_struct_to_ase_atoms(structure: Structure) -> Atoms:
@@ -1180,9 +1387,6 @@ class Substitutor:
                 pbc=True,
             )
 
-        """
-        ASE atoms instances generator.
-        """
         # This one does not need symprec.
         # Just to keep the signature the same.
         del symprec
@@ -1191,7 +1395,13 @@ class Substitutor:
 
     def ewalds(self, symprec=None):
         """
-        Ewald energy generator.
+        Generate Ewald energies for all unique patterns.
+
+        Args:
+            symprec (float | None): Optional symmetry precision forwarded to CIF generation.
+
+        Yields:
+            float: Ewald total energy for each configuration.
         """
         for _, p in self.make_patterns():
             yield self._get_ewald(p, symprec)
@@ -1243,6 +1453,11 @@ class Substitutor:
         orbits = des.keys()
         gis = self._group_indices
 
+        # If the input requested MSG, emit magCIF output preserving moments.
+        if _structure_requests_msg(self._structure):
+            structure = self._get_structure(p)
+            return _StringWriter(_structure_to_mcif_string(structure))
+
         # Build template CifWriter. First run only.
         if self._template_cifwriter is None:
             # In this template, all sites are ordered / single-occupied.
@@ -1269,7 +1484,7 @@ class Substitutor:
             # Use faster CifBlock implementation
             cfkey = cifwriter.cif_file.data.keys()
             cfkey = list(cfkey)[0]
-            block = AltCifBlock.from_str(str(cifwriter.cif_file.data[cfkey]))
+            block = _AltCifBlock.from_str(str(cifwriter.cif_file.data[cfkey]))
             cifwriter.cif_file.data[cfkey] = block
 
             self._template_cifwriter = cifwriter
@@ -1408,7 +1623,68 @@ class Substitutor:
             for e in de:
                 subpattern = next(pi)
                 for i in subpattern:
-                    structure.sites[indices[i]].species = e
+                    site = structure.sites[indices[i]]
+                    site.species = e
+
+                    # Magnetic moment propagation (when template came from magCIF)
+                    mom_map = site.properties.get("_atom_site_moment_by_label")
+                    if mom_map:
+                        # Determine element symbol for the new species (best effort)
+                        symbol = None
+                        try:
+                            symbol = e.symbol  # Element
+                        except Exception:
+                            try:
+                                elems = getattr(e, "elements", None)
+                                if elems and len(elems) == 1:
+                                    symbol = list(elems)[0].symbol
+                            except Exception:
+                                symbol = None
+
+                        # Prefer transforming the base moment for this element label
+                        # using the site's recorded magnetic symmetry operation.
+                        moments_by_label = (getattr(structure, "properties", None) or {}).get("_atom_site_moments_by_label", {})
+
+                        def _pick_base_label(sym: str | None) -> str | None:
+                            if not sym:
+                                return None
+                            if sym in moments_by_label:
+                                return sym
+                            for k in sorted(moments_by_label.keys()):
+                                if isinstance(k, str) and k.startswith(sym):
+                                    return k
+                            return None
+
+                        def _transform_base_moment(base_vec):
+                            op_aff = site.properties.get("_shry_magn_op_affine")
+                            tr = site.properties.get("_shry_magn_time_reversal")
+                            if op_aff is None or tr is None:
+                                return base_vec
+                            try:
+                                r = np.array(op_aff, dtype=float)[:3, :3]
+                                det = np.linalg.det(r)
+                                det_sign = 1.0 if det >= 0 else -1.0
+                                v = np.array(base_vec, dtype=float)
+                                vv = det_sign * (r @ v)
+                                vv = float(int(tr)) * vv
+                                return (float(vv[0]), float(vv[1]), float(vv[2]))
+                            except Exception:
+                                return base_vec
+
+                        chosen_label = _pick_base_label(symbol)
+                        if chosen_label is not None:
+                            base_vec = moments_by_label.get(chosen_label, (0.0, 0.0, 0.0))
+                            vec = _transform_base_moment(base_vec)
+                        else:
+                            # Last resort: try the site's existing map.
+                            chosen_label = next((k for k in mom_map.keys() if isinstance(k, str)), None)
+                            vec = mom_map.get(chosen_label, (0.0, 0.0, 0.0)) if chosen_label else (0.0, 0.0, 0.0)
+
+                        if chosen_label is not None:
+                            site.properties["_atom_site_label"] = (chosen_label,)
+                            site.properties["_atom_site_moment_by_label"] = {chosen_label: vec}
+                            site.properties["_atom_site_occupancy_by_label"] = {chosen_label: 1.0}
+                            site.properties["magmom"] = np.array(vec, dtype=float)
         return structure
 
     def _get_ewald(self, p, symprec):
@@ -1432,7 +1708,7 @@ class Substitutor:
             raise ValueError("Ewald summation required CIFs with defined oxidation states.") from exc
 
 
-class PatternMaker:
+class _PatternMaker:
     """
     Generate permutationally-unique patterns
     """
@@ -1545,7 +1821,7 @@ class PatternMaker:
             self._iterate = np.flatnonzero
 
         if enumerator_collection is None:
-            self._get_polya = get_polya
+            self._get_polya = _get_polya
         elif callable(enumerator_collection):
             self._get_polya = enumerator_collection
         else:
@@ -1556,7 +1832,7 @@ class PatternMaker:
             relabel_index,
             row_index,
             indexed_perm_list,
-        ) = PatternMaker.reindex(perm_list)
+        ) = _PatternMaker.reindex(perm_list)
 
         if invar is not None:
             self.invar = invar[np.ix_(column_index, column_index)]
@@ -1640,7 +1916,7 @@ class PatternMaker:
             relabel_index,
             row_index,
             relabeled_perm_list,
-        ) = PatternMaker.reindex(perm_list)
+        ) = _PatternMaker.reindex(perm_list)
 
         if relabeled_perm_list.tobytes() != self._perms.tobytes():
             raise ValueError(
@@ -1659,7 +1935,7 @@ class PatternMaker:
         Rough equivalence. Byte string from a standardized
         representation of the given permutation
         """
-        _, _, _, relabeled_perm_list = PatternMaker.reindex(perm_list)
+        _, _, _, relabeled_perm_list = _PatternMaker.reindex(perm_list)
         return relabeled_perm_list.tobytes()
 
     def get_row_map(self):
@@ -2060,7 +2336,7 @@ class PatternMaker:
         # Adaptive depth expansion: expand as deep as needed for good load balancing
         n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
         min_splits = max(n_cores * 8, 32)  # Target: 8x cores
-        max_depth = min(stop - 1, 10)  # Can expand up to stop-1, max 10
+        max_depth = min(stop - 1, 8)  # Can expand up to stop-1, max 8
         current_depth = 1 if not start else start
 
         logging.info(f"Initial: {len(initial_states)} subtrees, target: {min_splits}, max_depth: {max_depth}, stop: {stop}")
@@ -2266,7 +2542,7 @@ class PatternMaker:
         # Adaptive depth expansion: expand as deep as needed for good load balancing
         n_cores = multiprocessing.cpu_count() if self._n_jobs == -1 else abs(self._n_jobs)
         min_splits = max(n_cores * 8, 32)  # Target: 8x cores
-        max_depth = min(stop - 1, 10)  # Can expand up to stop-1, max 10
+        max_depth = min(stop - 1, 8)  # Can expand up to stop-1, max 8
         current_depth = 1 if not start else start
 
         logging.info(f"Initial: {len(initial_states)} subtrees, target: {min_splits}, max_depth: {max_depth}, stop: {stop}")
@@ -2409,7 +2685,7 @@ class PatternMaker:
             # self._gen_flag[stop] = True
 
 
-class Polya:
+class _Polya:
     """
     Perform operations related (weighed) Polya Enumeration Theorem.
 
@@ -2562,7 +2838,7 @@ class Polya:
 
         o_counts = []
         for o_cycles in self.ci().values():
-            o_parts = [[aR_array(cnum, len(color)) for cnum in cycles.values()] for cycles, color in zip(o_cycles, amt_tuple)]
+            o_parts = [[_aR_array(cnum, len(color)) for cnum in cycles.values()] for cycles, color in zip(o_cycles, amt_tuple)]
 
             # Exponent values of each variables
             exps = [
@@ -2582,7 +2858,7 @@ class Polya:
             counts = [
                 functools.reduce(
                     lambda x, y: x * y,
-                    [multinomial_coeff(tuple(p[j])) for p, j in zip(f_parts, i)],
+                    [_multinomial_coeff(tuple(p[j])) for p, j in zip(f_parts, i)],
                 )
                 for i in match_i
             ]
@@ -2606,10 +2882,10 @@ def _deserialize_perm_list(serialized):
 @functools.lru_cache(None)
 def _get_polya_cached(serialized_perms, group_size=None):
     perm_list = _deserialize_perm_list(serialized_perms)
-    return Polya(perm_list, group_size)
+    return _Polya(perm_list, group_size)
 
 
-def get_polya(permutation_list, group_size=None):
+def _get_polya(permutation_list, group_size=None):
     """
     Return a cached Polya instance for the given permutation list.
 

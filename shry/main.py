@@ -7,6 +7,7 @@ Main task abstraction
 
 # python modules
 import ast
+import copy
 import datetime
 import io
 import itertools
@@ -15,6 +16,8 @@ import math
 import multiprocessing
 import operator
 import os
+import re
+import calendar
 import shutil
 import signal
 import sys
@@ -32,9 +35,18 @@ from pymatgen.util.coord import in_coord_list_pbc, lattice_points_in_supercell
 
 # shry modules
 from . import const
-from .cif_io import get_cif_block, get_cif_dict, get_symops_from_cif, parse_cif_to_structure
-from .core import Substitutor, get_symmetry_operations_from_spglib
-from .patches import apply_pymatgen_patches
+from .cif_io import (
+    _get_cif_block,
+    _get_cif_dict,
+    _get_magnetic_symops_from_cif,
+    _get_symops_from_cif,
+    parse_cif_to_structure,
+    _str2float,
+    _structure_to_cif_string,
+    _structure_to_mcif_string,
+)
+from .core import Substitutor, _get_symmetry_operations_from_spglib
+from .patches import _apply_pymatgen_patches
 
 # shry version control
 try:
@@ -42,7 +54,7 @@ try:
 except (ModuleNotFoundError, ImportError):
     shry_version = "unknown (not installed)"
 
-apply_pymatgen_patches()
+_apply_pymatgen_patches()
 
 
 def _chunk_generator(gen, chunk_size):
@@ -105,7 +117,7 @@ def _write_cif_files(file_data_list):
 
 
 @dataclass(frozen=True)
-class RunConfig:
+class _RunConfig:
     structure_file: str
     from_species: list
     to_species: list
@@ -121,6 +133,7 @@ class RunConfig:
     write_ewald: bool
     max_ewald: float | None
     no_write: bool
+    n_jobs: int
     no_dmat: bool
     t_kind: str
     no_cache: bool = False
@@ -160,11 +173,11 @@ def _normalize_sample(sample):
     return sample
 
 
-def _normalize_config(config: RunConfig) -> RunConfig:
+def _normalize_config(config: _RunConfig) -> _RunConfig:
     sample = _normalize_sample(config.sample)
     scaling_matrix = np.array(config.scaling_matrix)
     write_ewald = config.write_ewald or config.max_ewald is not None
-    return RunConfig(
+    return _RunConfig(
         **{
             **{k: getattr(config, k) for k in config.__dataclass_fields__},
             "sample": sample,
@@ -174,16 +187,23 @@ def _normalize_config(config: RunConfig) -> RunConfig:
     )
 
 
-def _validate_config(config: RunConfig) -> None:
+def _validate_config(config: _RunConfig) -> None:
     if len(config.from_species) != len(config.to_species):
         raise RuntimeError("from_species and to_species must have the same length.")
 
 
-def prepare_structures(config: RunConfig):
+def _prepare_structures(config: _RunConfig):
     structure = LabeledStructure.from_file(
         config.structure_file,
         symmetrize=config.symmetrize,
     )
+
+    sym_mode = getattr(structure, "properties", {}).get("_shry_symmetry_mode", "sg")
+    if sym_mode == "msg":
+        print("[shry] Using MSG (magnetic space group via spglib)")
+    else:
+        print("[shry] Using SG (space-group symmetry via spglib)")
+
     modified_structure = structure.copy()
     # Note: since we don't limit the allowable scaling_matrix,
     # changing the order of enlargement vs. replace can have different meaning.
@@ -192,10 +212,11 @@ def prepare_structures(config: RunConfig):
     return structure, modified_structure
 
 
-def build_substitutor(config: RunConfig, modified_structure):
+def _build_substitutor(config: _RunConfig, modified_structure):
     cache = False if config.no_cache else None
     return Substitutor(
         modified_structure,
+        n_jobs=config.n_jobs,
         symprec=config.symprec,
         atol=config.atol,
         angle_tolerance=config.angle_tolerance,
@@ -207,7 +228,7 @@ def build_substitutor(config: RunConfig, modified_structure):
     )
 
 
-class ScriptHelper:
+class _ScriptHelper:
     """
     Combine configurations into typical workflow in single methods
     """
@@ -229,12 +250,19 @@ class ScriptHelper:
         write_ewald=const.DEFAULT_WRITE_EWALD,
         max_ewald=const.DEFAULT_MAX_EWALD,
         no_write=const.DEFAULT_NO_WRITE,
+        n_jobs=1,
         no_dmat=const.DEFAULT_NO_DMAT,
         no_cache=False,
         t_kind=const.DEFAULT_T_KIND,
     ):
-        self._timestamp = datetime.datetime.now().timestamp()
-        config = RunConfig(
+        now = datetime.datetime.now()
+        self._timestamp = now.timestamp()
+        # Human-readable time tag for output directory names.
+        # Format: HHMMSS-DMY, where month is an English 3-letter abbreviation.
+        # Example: 145912-12Feb26
+        mon = calendar.month_abbr[now.month]
+        self._time_tag = f"{now:%H%M%S}-{now.day:02d}{mon}{now:%y}"
+        config = _RunConfig(
             structure_file=structure_file,
             from_species=from_species,
             to_species=to_species,
@@ -250,6 +278,7 @@ class ScriptHelper:
             write_ewald=write_ewald,
             max_ewald=max_ewald,
             no_write=no_write,
+            n_jobs=n_jobs,
             no_dmat=no_dmat,
             t_kind=t_kind,
             no_cache=no_cache,
@@ -267,8 +296,15 @@ class ScriptHelper:
         logging.info(self)
         logging.info(const.HLINE)
 
-        self.structure, self.modified_structure = prepare_structures(config)
-        self.substitutor = build_substitutor(config, self.modified_structure)
+        self.structure, self.modified_structure = _prepare_structures(config)
+        self.substitutor = _build_substitutor(config, self.modified_structure)
+
+        # Freeze output directory name for this run (avoid changing if accessed later).
+        structure_file_basename = os.path.basename(self.structure_file).split(".")[0]
+        base = f"shry-{structure_file_basename}-{self._time_tag}"
+        if os.path.exists(base):
+            raise FileExistsError(f"Output directory already exists: {base}")
+        self._outdir_name = base
 
     def __str__(self):
         string = ""
@@ -295,8 +331,7 @@ class ScriptHelper:
         Returns:
             str: Output directory name.
         """
-        structure_file_basename = os.path.basename(self.structure_file).split(".")[0]
-        return f"shry-{structure_file_basename}-{self._timestamp}"
+        return self._outdir_name
 
     def save_modified_structure(self):
         """
@@ -307,11 +342,20 @@ class ScriptHelper:
         os.makedirs(self._outdir, exist_ok=True)
         structure_file_basename = os.path.basename(self.structure_file).split(".")[0]
         scaling_matrix_string = "-".join(self.scaling_matrix.flatten().astype(str))
+        sym_mode = (getattr(self.modified_structure, "properties", None) or {}).get("_shry_symmetry_mode", "sg")
+        ext = "mcif" if sym_mode == "msg" else "cif"
         filename = os.path.join(
             self._outdir,
-            structure_file_basename + "-" + scaling_matrix_string + ".cif",
+            structure_file_basename + "-" + scaling_matrix_string + f".{ext}",
         )
-        self.modified_structure.to(filename=filename, symprec=self.symprec)
+        # Avoid pymatgen's CIF writer here: it runs SpacegroupAnalyzer which may
+        # raise `TypeError: unhashable type: 'numpy.ndarray'` in some environments.
+        if sym_mode == "msg":
+            cif_text = _structure_to_mcif_string(self.modified_structure)
+        else:
+            cif_text = _structure_to_cif_string(self.modified_structure)
+        with open(filename, "w", encoding="utf-8") as handle:
+            handle.write(cif_text)
 
     def write(self):
         """
@@ -400,6 +444,8 @@ class ScriptHelper:
         formula = "".join(self.modified_structure.formula.split())
         ndigits = int(math.log10(npatterns)) + 1
         index_f = "_{:0" + str(ndigits) + "d}"
+        sym_mode = (getattr(self.modified_structure, "properties", None) or {}).get("_shry_symmetry_mode", "sg")
+        out_ext = "mcif" if sym_mode == "msg" else "cif"
         filenames = [os.path.join(outdir(i), formula + index_f.format(i)) for i in range(npatterns)]
 
         # Make directories
@@ -466,13 +512,16 @@ class ScriptHelper:
                 if ewald is not None:
                     line = line + f" {ewald}"
                 if self.write_symm:
-                    space_group = list(cifwriter.cif_file.data.values())[0]["_symmetry_space_group_name_H-M"]
+                    if hasattr(cifwriter, "cif_file"):
+                        space_group = list(cifwriter.cif_file.data.values())[0]["_symmetry_space_group_name_H-M"]
+                    else:
+                        space_group = "MSG" if out_ext == "mcif" else "SG"
                     line = line + f" {space_group}"
                 print(line, file=logio)
 
                 # Convert CifWriter to string and prepare for parallel writing
                 cif_string = str(cifwriter)
-                filename = filenames[i] + f"_{weight}.cif"
+                filename = filenames[i] + f"_{weight}.{out_ext}"
                 file_batch.append((filename, cif_string))
 
                 # Submit batch to worker pool when it reaches chunk_size
@@ -516,17 +565,36 @@ class ScriptHelper:
 
 
 class LabeledStructure(Structure):
-    """
-    Structure + CIF's _atom_site_label
+    """Structure subclass that preserves CIF label and magnetic-moment metadata.
+
+    In addition to standard ``pymatgen.Structure`` behavior, this class stores
+    per-site CIF-derived properties such as ``_atom_site_label`` and magnetic
+    moment mappings. These properties are kept consistent across common
+    structure operations (copy, supercell expansion, species replacement), so
+    downstream SHRY substitution logic can track site identity robustly.
     """
 
     def __str__(self):
+        """Return a human-readable representation with subclass header."""
         return "LabeledStructure\n" + super().__str__()
 
     def __mul__(self, scaling_matrix):
-        """
-        The parent method returns Structure instance!
-        Overwrite the offending line.
+        """Return a supercell while preserving the ``LabeledStructure`` type.
+
+        This overrides ``Structure.__mul__`` to keep the subclass and its
+        structure-level properties (including SG/MSG mode and magnetic metadata)
+        after supercell creation.
+
+        Args:
+            scaling_matrix (array-like): Supercell scaling in pymatgen-compatible
+                shape ``(1,)``, ``(3,)``, or ``(3, 3)``.
+
+        Returns:
+            LabeledStructure: Expanded structure with copied site and structure
+                properties.
+
+        Raises:
+            ValueError: If ``scaling_matrix`` has unsupported shape.
         """
 
         scale_matrix = np.array(scaling_matrix, np.int16)
@@ -562,7 +630,37 @@ class LabeledStructure(Structure):
 
         new_charge = self._charge * np.linalg.det(scale_matrix) if self._charge else None
         # This line.
-        return self.__class__.from_sites(new_sites, charge=new_charge)
+        new_struct = self.__class__.from_sites(new_sites, charge=new_charge)
+
+        # Preserve Structure-level properties (pymatgen doesn't always keep these
+        # through from_sites / __mul__). This is required for MSG/SG mode tracking
+        # and for global magCIF label->moment maps.
+        old_props = getattr(self, "properties", None) or {}
+        if getattr(new_struct, "properties", None) is None:
+            new_struct.properties = {}
+        new_struct.properties.update(dict(old_props))
+        return new_struct
+
+    def copy(self, *args, **kwargs):  # pylint: disable=signature-differs
+        """Return a deep copy preserving the ``LabeledStructure`` type.
+
+        pymatgen's Structure.copy() returns a Structure instance; SHRY relies on
+        LabeledStructure methods (e.g. replace_species) to keep CIF labels and
+        magnetic moments consistent after modifications.
+
+        Returns:
+            LabeledStructure: Copied instance with duplicated site and structure
+                properties.
+        """
+        base = super().copy(*args, **kwargs)
+        # base is typically a plain Structure; convert back to our subclass.
+        new_struct = self.__class__.from_sites(base.sites, charge=getattr(base, "_charge", None))
+        new_struct._lattice = base.lattice
+        if getattr(base, "properties", None) is None:
+            new_struct.properties = {}
+        else:
+            new_struct.properties = copy.deepcopy(dict(base.properties))
+        return new_struct
 
     @classmethod
     def from_file(  # pylint: disable=arguments-differ
@@ -573,9 +671,28 @@ class LabeledStructure(Structure):
         merge_tol=0.0,
         symmetrize=False,
     ):
+        """Create a ``LabeledStructure`` from CIF/magCIF and attach labels.
+
+        Args:
+            filename (str): Path to ``.cif`` or ``.mcif`` file.
+            primitive (bool): Whether to return a primitive structure.
+            sort (bool): Whether to sort sites during parsing.
+            merge_tol (float): Site merge tolerance used by parser.
+            symmetrize (bool): If True, match labels using spglib symmetry
+                operations instead of CIF symmetry operators.
+
+        Returns:
+            LabeledStructure: Parsed structure populated with
+                ``_atom_site_label`` and related properties.
+
+        Raises:
+            ValueError: If file extension is not CIF/magCIF.
+        """
         fname = os.path.basename(filename)
         if not fnmatch(fname.lower(), "*.cif*") and not fnmatch(fname.lower(), "*.mcif*"):
             raise ValueError("LabeledStructure only accepts CIFs.")
+
+        sym_mode = "msg" if fnmatch(fname.lower(), "*.mcif*") else "sg"
 
         # Use pycifrw instead of pymatgen.Structure.from_file
         structure = parse_cif_to_structure(filename, primitive=primitive, sort=sort, merge_tol=merge_tol)
@@ -584,22 +701,76 @@ class LabeledStructure(Structure):
         instance = cls.from_sites(structure.sites)
         instance._lattice = structure.lattice
 
+        # Record symmetry mode decision on Structure.
+        # This will be used by spglib wrappers to switch SG/MSG behavior.
+        if getattr(instance, "properties", None) is None:
+            instance.properties = {}
+        instance.properties["_shry_symmetry_mode"] = sym_mode
+
         instance.read_label(filename, symmetrize=symmetrize)
         return instance
 
     def replace_species(self, species_mapping):
-        """
-        Replace sites from species to another species,
-        or labels from _atom_site_label.
+        """Replace species/labels while preserving CIF and magnetic metadata.
 
         Args:
-            species_mapping (dict): from-to map of the species to be replaced.
-                (string) to (string).
+            species_mapping (dict[str, str]): Mapping from source label/element to
+                target species expression. Keys are first matched against
+                ``_atom_site_label`` entries; if not found, element-symbol matches
+                are attempted.
 
         Raises:
-            RuntimeError: If no sites matches at least one of the from_species
+            RuntimeError: If no sites match at least one source key in
                 specification.
         """
+
+        def _derive_label(from_label: str, to_species: str) -> str:
+            """Derive a reasonable target CIF label.
+
+            If the user specifies an element symbol (e.g. "Cu") but the input CIF
+            uses numbered labels (e.g. "Co1"), keep the suffix: "Cu1".
+            """
+            to_species_s = str(to_species).strip()
+            from_label_s = str(from_label).strip()
+            if re.fullmatch(r"[A-Za-z]+", to_species_s):
+                m = re.match(r"^[A-Za-z]+(.*)$", from_label_s)
+                suffix = m.group(1) if m else ""
+                if suffix:
+                    return f"{to_species_s}{suffix}"
+            return to_species_s
+
+        def _lookup_moment(label: str, element_symbol: str, moments_by_label: dict):
+            if label in moments_by_label:
+                return moments_by_label[label]
+            if element_symbol in moments_by_label:
+                return moments_by_label[element_symbol]
+            # Fallback: first matching label like "Cu1", "Cu2", ...
+            for k in sorted(moments_by_label.keys()):
+                if isinstance(k, str) and k.startswith(element_symbol):
+                    return moments_by_label[k]
+            return (0.0, 0.0, 0.0)
+
+        def _transform_base_moment_for_site(site, base_vec: tuple[float, float, float]) -> tuple[float, float, float]:
+            """Transform a label's *base* moment vector into this site's orientation.
+
+            For magCIF-derived structures we store the symmetry op used to generate each
+            site (rotation + translation) and time reversal in site.properties.
+            """
+            op_aff = site.properties.get("_shry_magn_op_affine")
+            tr = site.properties.get("_shry_magn_time_reversal")
+            if op_aff is None or tr is None:
+                return base_vec
+            try:
+                r = np.array(op_aff, dtype=float)[:3, :3]
+                det = np.linalg.det(r)
+                det_sign = 1.0 if det >= 0 else -1.0
+                v = np.array(base_vec, dtype=float)
+                vv = det_sign * (r @ v)
+                vv = float(int(tr)) * vv
+                return (float(vv[0]), float(vv[1]), float(vv[2]))
+            except Exception:
+                return base_vec
+
         for map_num, mapping in enumerate(species_mapping.items()):
             from_species, to_species = mapping
             replace = False
@@ -608,8 +779,50 @@ class LabeledStructure(Structure):
                 # Find matching site label
                 if from_species in site.properties["_atom_site_label"]:
                     replace = True
-                    # If match by label, don't change the label!
-                    # site.properties["_atom_site_label"] = tuple(sorted({to_species}))
+
+                    to_label = _derive_label(from_species, to_species)
+
+                    # If match by label, also replace the label-associated magnetic moment.
+                    old_labels = tuple(site.properties.get("_atom_site_label", ()))
+                    string_labels = [to_label if x == from_species else x for x in old_labels if isinstance(x, str)]
+                    string_labels = sorted(set(string_labels))
+                    other_labels = [x for x in old_labels if not isinstance(x, str)]
+                    site.properties["_atom_site_label"] = tuple(string_labels + other_labels)
+
+                    old_mom_map = dict(site.properties.get("_atom_site_moment_by_label", {}))
+                    old_occ_map = dict(site.properties.get("_atom_site_occupancy_by_label", {}))
+
+                    # Merge occupancies if from->to collides with an existing label.
+                    new_occ_map: dict[str, float] = {}
+                    for lab, occ in old_occ_map.items():
+                        new_lab = to_label if lab == from_species else lab
+                        new_occ_map[new_lab] = float(new_occ_map.get(new_lab, 0.0)) + float(occ)
+
+                    moments_by_label = getattr(self, "properties", {}).get("_atom_site_moments_by_label", {})
+
+                    # Determine the transformed moment for to_label.
+                    if to_label in old_mom_map:
+                        to_vec = old_mom_map[to_label]
+                    else:
+                        base = _lookup_moment(to_label, str(to_species).strip(), moments_by_label)
+                        to_vec = _transform_base_moment_for_site(site, base)
+
+                    # Build new mom_map keeping existing labels (except removed one).
+                    new_mom_map: dict[str, tuple[float, float, float]] = {}
+                    for lab, vec in old_mom_map.items():
+                        if lab == from_species:
+                            continue
+                        # If some other label already equals to_label, keep it (it is already transformed).
+                        if lab == to_label:
+                            new_mom_map[lab] = vec
+                        else:
+                            new_mom_map[lab] = vec
+                    new_mom_map[to_label] = to_vec
+
+                    site.properties["_atom_site_moment_by_label"] = new_mom_map
+                    site.properties["_atom_site_occupancy_by_label"] = new_occ_map
+                    site.properties["magmom"] = self._representative_magmom(new_mom_map, new_occ_map)
+
                     try:
                         site.species = to_composition
                     except ValueError:
@@ -622,6 +835,15 @@ class LabeledStructure(Structure):
                     # replaced into the same species.
                     new_label = tuple(sorted({to_species}) + [map_num])
                     site.properties["_atom_site_label"] = new_label
+
+                    moments_by_label = getattr(self, "properties", {}).get("_atom_site_moments_by_label", {})
+                    mom = _lookup_moment(str(to_species).strip(), str(to_species).strip(), moments_by_label)
+                    site.properties["_atom_site_moment_by_label"] = {to_species: mom}
+                    site.properties["_atom_site_occupancy_by_label"] = {to_species: 1.0}
+                    site.properties["magmom"] = self._representative_magmom(
+                        site.properties["_atom_site_moment_by_label"], site.properties["_atom_site_occupancy_by_label"]
+                    )
+
                     try:
                         site.species = to_composition
                     except ValueError:
@@ -637,19 +859,22 @@ class LabeledStructure(Structure):
         angle_tolerance=const.DEFAULT_ANGLE_TOLERANCE,
         symmetrize=False,
     ):
-        """
-        Add _atom_site_label as site_properties.
-        This is useful for enforcing a certain concentration over
-        a group of sites, which may not necessarily consists
-        of a single orbit after enlargement to a supercell.
+        """Read CIF/magCIF labels and map them onto current structure sites.
+
+        Adds ``_atom_site_label`` and associated magnetic/occupancy properties to
+        each site. For magCIF input, magnetic moments are transformed according to
+        magnetic symmetry operations when required.
 
         Args:
             cif_filename (str): Source CIF file.
-            symprec (float): Precision for the symmetry operations.
+            symprec (float): Symmetry precision used when ``symmetrize=True``.
+            angle_tolerance (float): Angle tolerance for symmetry operations.
+            symmetrize (bool): If True, use spglib-derived symmetry operations for
+                label matching.
 
         Raises:
-            RuntimeError: If any sites couldn't be matched
-                to one any sites defined within the CIF.
+            RuntimeError: If any structure site cannot be matched to CIF-defined
+                positions/labels.
         """
         logging.info(f"Reading _atom_site_label from {cif_filename}")
 
@@ -661,7 +886,7 @@ class LabeledStructure(Structure):
                 return float(string.split("(")[0])
 
         # Use pycifrw instead of pymatgen CifParser
-        cif_dict_all = get_cif_dict(cif_filename)
+        cif_dict_all = _get_cif_dict(cif_filename)
 
         # Get first block (same behavior as original)
         cif_dict = list(cif_dict_all.values())[0]
@@ -682,48 +907,182 @@ class LabeledStructure(Structure):
 
         labels = _as_list(cif_dict["_atom_site_label"])
 
+        # Optional: per-label occupancy (needed for mixed sites).
+        occupancies = _as_list(cif_dict.get("_atom_site_occupancy", []))
+        if not occupancies:
+            occupancies = [1.0] * len(labels)
+
+        # Parse magCIF moments if present.
+        moments_by_label = {}
+        if "_atom_site_moment.label" in cif_dict:
+            m_labels = _as_list(cif_dict.get("_atom_site_moment.label"))
+            mxs = _as_list(cif_dict.get("_atom_site_moment.crystalaxis_x", []))
+            mys = _as_list(cif_dict.get("_atom_site_moment.crystalaxis_y", []))
+            mzs = _as_list(cif_dict.get("_atom_site_moment.crystalaxis_z", []))
+            for lab, mx, my, mz in zip(m_labels, mxs, mys, mzs, strict=False):
+                try:
+                    moments_by_label[str(lab).strip()] = (_str2float(mx), _str2float(my), _str2float(mz))
+                except Exception:
+                    continue
+
+        if getattr(self, "properties", None) is None:
+            self.properties = {}
+        if moments_by_label:
+            self.properties["_atom_site_moments_by_label"] = moments_by_label
+
+        def _transform_moment(vec, op, time_reversal: int) -> tuple[float, float, float]:
+            v = np.array(vec, dtype=float)
+            if v.shape == ():
+                v = np.array([float(v), 0.0, 0.0], dtype=float)
+            if v.shape != (3,):
+                return (0.0, 0.0, 0.0)
+            r = np.array(op.rotation_matrix, dtype=float)
+            det = np.linalg.det(r)
+            det_sign = 1.0 if det >= 0 else -1.0
+            vv = det_sign * (r @ v)
+            vv = float(time_reversal) * vv
+            return (float(vv[0]), float(vv[1]), float(vv[2]))
+
         # Merge labels to allow multiple references.
+        # Keep per-label occupancy so we can compute representative magmom as
+        # occupancy-weighted average for mixed/disordered sites.
+        merged_rows = list(zip(coords, labels, occupancies, strict=False))
+        merged_rows.sort(key=lambda t: t[0])
         cif_sites = []
-        for coord, zipgroup in itertools.groupby(zip(coords, labels), key=lambda x: x[0]):
-            labels = tuple(sorted({x[1] for x in zipgroup}))
+        for coord, zipgroup in itertools.groupby(merged_rows, key=lambda x: x[0]):
+            items = list(zipgroup)
+            merged_labels = tuple(sorted({x[1] for x in items}))
+            mom_map = {lab: moments_by_label.get(lab, (0.0, 0.0, 0.0)) for lab in merged_labels}
+            occ_map = {}
+            for _c, lab, occ in items:
+                try:
+                    occ_map[str(lab)] = occ_map.get(str(lab), 0.0) + _str2float(occ)
+                except Exception:
+                    occ_map[str(lab)] = occ_map.get(str(lab), 0.0)
             cif_sites.append(
                 PeriodicSite(
                     "X",
                     coord,
                     self.lattice,
-                    properties={"_atom_site_label": labels},
+                    properties={
+                        "_atom_site_label": merged_labels,
+                        "_atom_site_moment_by_label": mom_map,
+                        "_atom_site_occupancy_by_label": occ_map,
+                    },
                 )
             )
 
         # Find equivalent sites.
-        if symmetrize:
-            symm_ops = get_symmetry_operations_from_spglib(self, symprec, angle_tolerance)
-        else:
-            # Get symmetry operations from CIF
-            symops_list = get_symops_from_cif(cif_dict)
-            # Spacegroup symbol and number are not important here.
-            symm_ops = SpacegroupOperations(0, 0, symops_list)
+        # For magCIF: we must transform magnetic moments under symmetry operations.
+        sym_mode = (getattr(self, "properties", None) or {}).get("_shry_symmetry_mode", "sg")
+        use_mag_ops = (sym_mode == "msg") and (
+            "_space_group_symop_magn_operation.xyz" in cif_dict or "_space_group_symop_magn_operation_xyz" in cif_dict
+        )
 
-        coords = [x.frac_coords for x in self.sites]
-        cif_coords = [x.frac_coords for x in cif_sites]
+        if symmetrize or not use_mag_ops:
+            # Keep the previous (faster) logic for non-magnetic or spglib-symmetrized matching.
+            if symmetrize:
+                symm_ops = _get_symmetry_operations_from_spglib(self, symprec, angle_tolerance)
+            else:
+                symops_list = _get_symops_from_cif(cif_dict)
+                symm_ops = SpacegroupOperations(0, 0, symops_list)
 
-        # List of coordinates that are equivalent to this site
-        o_cif_coords = [symmop.operate_multi(cif_coords) for symmop in symm_ops]
-        o_cif_coords = np.swapaxes(np.stack(o_cif_coords), 0, 1)
-        o_cif_coords = [np.unique(np.mod(x, 1), axis=0) for x in o_cif_coords]
+            cif_coords = [x.frac_coords for x in cif_sites]
+            o_cif_coords = [symmop.operate_multi(cif_coords) for symmop in symm_ops]
+            o_cif_coords = np.swapaxes(np.stack(o_cif_coords), 0, 1)
+            o_cif_coords = [np.unique(np.mod(x, 1), axis=0) for x in o_cif_coords]
+
+            for site in tqdm.tqdm(
+                self.sites,
+                desc="Matching CIF labels",
+                **const.TQDM_CONF,
+                disable=const.DISABLE_PROGRESSBAR,
+            ):
+                equivalent = [in_coord_list_pbc(o, site.frac_coords, atol=const.DEFAULT_ATOL) for o in o_cif_coords]
+                try:
+                    equivalent_site = cif_sites[equivalent.index(True)]
+                    site.properties["_atom_site_label"] = equivalent_site.properties["_atom_site_label"]
+                    site.properties["_atom_site_moment_by_label"] = equivalent_site.properties.get(
+                        "_atom_site_moment_by_label", {}
+                    )
+                    site.properties["_atom_site_occupancy_by_label"] = equivalent_site.properties.get(
+                        "_atom_site_occupancy_by_label", {}
+                    )
+                    mom_map = site.properties.get("_atom_site_moment_by_label", {})
+                    occ_map = site.properties.get("_atom_site_occupancy_by_label", {})
+                    site.properties["magmom"] = self._representative_magmom(mom_map, occ_map)
+                except ValueError as exc:
+                    raise RuntimeError("CIF-Structure mismatch.") from exc
+            return
+
+        # Magnetic matching with moment transformation.
+        mag_ops = _get_magnetic_symops_from_cif(cif_dict)
+        base_sites = []
+        for cs in cif_sites:
+            base_sites.append(
+                (
+                    np.array(cs.frac_coords, dtype=float),
+                    tuple(cs.properties.get("_atom_site_label", ())),
+                    dict(cs.properties.get("_atom_site_occupancy_by_label", {})),
+                )
+            )
 
         for site in tqdm.tqdm(
             self.sites,
-            desc="Matching CIF labels",
+            desc="Matching CIF labels (magCIF)",
             **const.TQDM_CONF,
             disable=const.DISABLE_PROGRESSBAR,
         ):
-            # Use slightly larger tolerance than pymatgen default (1e-8) to handle
-            # coordinate rounding by CifParser (typically rounds to ~1e-4 precision)
-            equivalent = [in_coord_list_pbc(o, site.frac_coords, atol=const.DEFAULT_ATOL) for o in o_cif_coords]
+            found = False
+            for base_coord, base_labels, occ_map in base_sites:
+                for op, tr in mag_ops:
+                    new_coord = op.operate(base_coord) % 1.0
+                    if in_coord_list_pbc([new_coord], site.frac_coords, atol=const.DEFAULT_ATOL):
+                        site.properties["_atom_site_label"] = base_labels
+                        site.properties["_atom_site_occupancy_by_label"] = occ_map
 
-            try:
-                equivalent_site = cif_sites[equivalent.index(True)]
-                site.properties["_atom_site_label"] = equivalent_site.properties["_atom_site_label"]
-            except ValueError as exc:
-                raise RuntimeError("CIF-Structure mismatch.") from exc
+                        # Record which magnetic symmetry operation generated this site,
+                        # so we can transform moments for substituted labels later.
+                        site.properties["_shry_magn_op_affine"] = np.array(op.affine_matrix, dtype=float)
+                        site.properties["_shry_magn_time_reversal"] = int(tr)
+
+                        mom_map = {}
+                        for lab in base_labels:
+                            vec = moments_by_label.get(str(lab).strip(), (0.0, 0.0, 0.0))
+                            mom_map[str(lab)] = _transform_moment(vec, op, tr)
+                        site.properties["_atom_site_moment_by_label"] = mom_map
+                        site.properties["magmom"] = self._representative_magmom(mom_map, occ_map)
+                        found = True
+                        break
+                if found:
+                    break
+            if not found:
+                raise RuntimeError("CIF-Structure mismatch (magCIF).")
+
+    @staticmethod
+    def _representative_magmom(mom_map: dict, occ_map: dict | None = None) -> np.ndarray:
+        """Compute representative magmom for spglib magnetic symmetry.
+
+        For mixed sites (multiple labels with moments), use an occupancy-weighted
+        average when per-label occupancies are available.
+        """
+        if not mom_map:
+            return np.zeros(3, dtype=float)
+
+        if occ_map:
+            total = 0.0
+            vec = np.zeros(3, dtype=float)
+            for lab, m in mom_map.items():
+                w = float(occ_map.get(lab, 0.0))
+                if w == 0.0:
+                    continue
+                vec += w * np.array(m, dtype=float)
+                total += w
+            if total > 0.0:
+                return vec / total
+
+        for m in mom_map.values():
+            v = np.array(m, dtype=float)
+            if not np.allclose(v, 0.0):
+                return v
+        return np.zeros(3, dtype=float)
